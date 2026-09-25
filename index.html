@@ -72,6 +72,18 @@ tr.total td{font-weight:700;border-top:2px solid var(--ink);border-bottom:none;p
 .faixaBig b{font-family:var(--serif);font-size:44px;line-height:1}
 .faixaBig span{color:var(--mute)}
 .falta{font-size:14px;margin:6px 0 16px}
+.escInfo{font-size:12px;color:var(--mute);margin-top:3px;display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center}
+.escDeg{border:1px solid var(--line);border-radius:10px;padding:0 7px;white-space:nowrap}
+.escDeg.on{border-color:var(--ok);color:var(--ok);font-weight:600}
+.escMsg{color:var(--ink);font-weight:500}
+.liq{border:1px solid var(--line);border-radius:6px;background:var(--bg);padding:12px 14px;margin:0 0 16px}
+.liq h2{font-size:16px;margin:0 0 8px}
+.invest{margin-bottom:8px}.invest input{width:120px}
+.liqTab{min-width:0;width:100%;font-size:13.5px}
+.liqTab td{padding:5px 0;white-space:normal;vertical-align:top}
+.liqTab td:last-child{text-align:right;white-space:nowrap;padding-left:10px}
+.liqTab tr.liqTot td{border-top:2px solid var(--ink);border-bottom:none;padding-top:7px}
+.liqTab tr.liqTot b{font-size:22px;color:var(--red)}
 .kpis{display:grid;grid-template-columns:1fr 1fr;gap:12px 14px;margin:0 0 16px}
 .kpi{border-top:1px solid var(--line);padding-top:6px}
 .kpi small{display:block;color:var(--mute);font-size:12px}
@@ -162,6 +174,7 @@ input[type=text],input[type=date],textarea{font:inherit;color:var(--ink);backgro
   .d-aviso{border-left:3px solid #E4002B;padding:4px 8px;margin:6px 0;background:#fde7eb;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .d-ass{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:26px}
   .d-ass div{border-top:1px solid #111;padding-top:4px;text-align:center;font-size:10px}
+  .d-liq{border:1px solid #E4002B;padding:6px 8px;margin:6px 0;font-size:11px}
   .d-rod{margin-top:14px;font-size:9px;color:#777}
   .doc .blk{break-inside:avoid}
 @media print{
@@ -214,9 +227,6 @@ input[type=text],input[type=date],textarea{font:inherit;color:var(--ink);backgro
   <label class="campo">Tabela do Coca-Cola 2L
     <select id="tabela"></select>
   </label>
-  <label class="campo">% do 2L retirado nos 3 últimos dias
-    <input type="number" id="ult3" min="0" max="100" step="5" value="0">
-  </label>
   <label class="campo chk"><input type="checkbox" id="rpsusp" checked> RefPet suspensa (exigência validada)</label>
   <label class="campo chk"><input type="checkbox" id="escadas" checked> Escadas de volume (lata, 600ml, 1L)</label>
   <button class="btn" id="zerar">Limpar proposta</button>
@@ -243,8 +253,18 @@ input[type=text],input[type=date],textarea{font:inherit;color:var(--ink);backgro
       <div class="kpi"><small>Rebate sobre o faturamento</small><b id="kRebPct">—</b></div>
       <div class="kpi"><small>Faturamento (TTV)</small><b id="kFat">—</b></div>
       <div class="kpi"><small>Receita líquida estimada</small><b id="kRl">—</b></div>
-      <div class="kpi"><small>Coca-Cola 2L, preço da caixa</small><b id="kCc">—</b></div>
-      <div class="kpi"><small>Coca-Cola 2L, caixa líquida do rebate</small><b id="kCcLiq">—</b></div>
+    </div>
+    <div class="liq">
+      <h2>Preço líquido Coca-Cola 2L Original</h2>
+      <label class="campo invest">Investimento adicional (R$ por caixa física de Coca 2L Original e Sem Açúcar)
+        <input type="number" id="invest" min="0" step="0.10" value="0" inputmode="decimal">
+      </label>
+      <table class="liqTab">
+        <tr><td>Preço da caixa (tabela)</td><td id="lPreco"></td></tr>
+        <tr><td>(−) Rebate total do mês por caixa de Original<br><span class="nota" id="lRebNota"></span></td><td id="lReb"></td></tr>
+        <tr><td>(−) Investimento adicional por caixa de Original<br><span class="nota" id="lInvNota"></span></td><td id="lInv"></td></tr>
+        <tr class="liqTot"><td>Caixa líquida</td><td><b id="lLiq"></b><br><span class="nota" id="lLiqUn"></span></td></tr>
+      </table>
     </div>
     <h2>Condições</h2>
     <ul class="checks" id="checks"></ul>
@@ -284,9 +304,8 @@ input[type=text],input[type=date],textarea{font:inherit;color:var(--ink);backgro
     <li>Coca-Cola 2L: N-17 exige 16.000 cx de Original; N-23 exige 5.000 ou 10.000 cx de Original, com as variações de RefPet da tabela; N-22 soma 16.000 cx a preço N-17 com o volume N-22 (50, 100 ou 150 mil cx) e exige 750 cx de RefPet 2L. Na opção automática vale a tabela elegível de menor preço.</li>
     <li>Coca-Cola Sem Açúcar tem sempre o mesmo preço TTV da Original, em todas as embalagens e degraus de escada. No 2L, não conta para os mínimos das tabelas.</li>
     <li>Demais produtos saem pela N-17; com 9.000 cx de lata (em caixas de 12) passam à N-17 Turbo Lata.</li>
-    <li>Escadas: lata Coca-Cola 3,15 (35 mil cx + 500 RP 2L + 355ml em 1%), 3,12 (35 mil + 750 + 1%), 3,06 (50 mil + 750 + 2%), 2,92 (75 mil + 750 + 2%) ou 2,98 (75 mil + 750, sem 355ml), todas com 16.000 cx de Coca 2L. O percentual do 355ml PET é sobre o total de caixas unitárias do pedido; 600ml Coca 4,43 (10 mil) e 4,33 (20 mil); 1L Coca 5,51 (7 mil) e 5,39 (12 mil), somando Original e Sem Açúcar.</li>
+    <li>Escadas contam só o volume de Coca-Cola Original; a Sem Açúcar da mesma embalagem paga o mesmo preço do degrau, mas não soma para atingi-lo. Lata Coca-Cola 3,15 (35 mil cx + 500 RP 2L + 355ml em 1%), 3,12 (35 mil + 750 + 1%), 3,06 (50 mil + 750 + 2%), 2,92 (75 mil + 750 + 2%) ou 2,98 (75 mil + 750, sem 355ml), todas com 16.000 cx de Coca 2L. O percentual do 355ml PET é sobre o total de caixas unitárias do pedido; 600ml Coca 4,43 (10 mil) e 4,33 (20 mil); 1L Coca 5,51 (7 mil) e 5,39 (12 mil).</li>
     <li>RefPet: exigências de 50, 100, 150, 500 e 750 cx de RefPet fazem parte da regra, mas estão temporariamente validadas por falta de produto (opção "RefPet suspensa").</li>
-    <li>Retirada nos 3 últimos dias do mês acrescenta R$ 0,10 por unidade no 2L.</li>
     <li>Fideliza Neutraliza 23: faixa pelo total de caixas unitárias do mês (22, 25, 30, 35 e 75 mil). Grupos: Coca-Cola 2L = só Original; 600ml e lata = todos os SKUs de 600ml e de lata; demais = todo o resto (2L que não é Coca Original, 2,5L, 1,5L, 1L, 355ml PET e RefPet). Cervejas ficam fora.</li>
     <li>Caixa unitária e pallet: fator de conversão e paletização do cadastro de produtos, por SKU em caixa. Pallets aceitam fração e são arredondados para caixas inteiras.</li>
     <li>Receita líquida: razão receita líquida ÷ valor faturado de cada SKU nas compras dos clientes Neutraliza (relatório AM_FAT_BND_MOV_VENDA, agosto e setembro/2026, já com a TTV de agosto — compras realizadas disponíveis de maio a setembro/2026, setembro parcial até 23/09; junho+julho ou média da família de embalagem quando o SKU não aparece em agosto/setembro).</li>
@@ -360,8 +379,8 @@ function calc(Q,tabId,ult3,escadas){
       if(p.id==='cco350'||p.id==='ccsa350'){
         const d=degrauLata(v,Q); if(d) un=d.p;
       }
-      if(p.id==='cco600'||p.id==='ccsa600'){const x=Q.cco600+Q.ccsa600; if(x>=20000)un=4.33; else if(x>=10000)un=4.43;}
-      if(p.id==='cco1'||p.id==='ccsa1'){const x=Q.cco1+Q.ccsa1; if(x>=12000)un=5.39; else if(x>=7000)un=5.51;}
+      if(p.id==='cco600'||p.id==='ccsa600'){const x=Q.cco600; if(x>=20000)un=4.33; else if(x>=10000)un=4.43;}
+      if(p.id==='cco1'||p.id==='ccsa1'){const x=Q.cco1; if(x>=12000)un=5.39; else if(x>=7000)un=5.51;}
     }
     const cx=un*p.mult, fat=Q[p.id]*cx, rl=fat*p.rl, cxu=Q[p.id]*p.cxu;
     L[p.id]={un,cx,fat,rl,cxu,mudou:Math.abs(un-p.nt)>0.001};
@@ -377,9 +396,35 @@ const DEGRAUS=[
  {p:3.12,lata:35000,rp:750,s355:.01},{p:3.15,lata:35000,rp:500,s355:.01}];
 function share355(Q){let tot=0;P.forEach(p=>tot+=Q[p.id]*p.cxu);return tot?Q.cco355*P.find(p=>p.id==='cco355').cxu/tot:0;}
 function degrauLata(v,Q){ if(v.cc<16000) return null; const s=share355(Q);
-  return DEGRAUS.find(d=>v.lata>=d.lata&&v.rp2r>=d.rp&&s>=d.s355-1e-9)||null; }
+  return DEGRAUS.find(d=>Q.cco350>=d.lata&&v.rp2r>=d.rp&&s>=d.s355-1e-9)||null; }
 function posRegua(c){const b=[0,22000,25000,30000,35000,75000,115000];const W=100/6;
   for(let i=0;i<6;i++){if(c<b[i+1])return W*i+W*(c-b[i])/(b[i+1]-b[i]);} return 99.5;}
+const ESCADA={
+  cco600:{nome:'600ml',deg:[[10000,'4,43'],[20000,'4,33']]},
+  cco1:{nome:'1L',deg:[[7000,'5,51'],[12000,'5,39']]},
+  cco350:{nome:'lata',deg:[[35000,'3,12'],[50000,'3,06'],[75000,'2,92']],lata:true},
+  ccsa600:{zero:'cco600'},ccsa1:{zero:'cco1'},ccsa350:{zero:'cco350'}};
+function renderEscadas(esc){
+  Object.keys(ESCADA).forEach(id=>{const el=$('esc_'+id); if(!el)return; const E=ESCADA[id];
+    if(E.zero){el.innerHTML=`<span class="escMsg" style="font-weight:400;color:var(--mute)">Preço acompanha o degrau da Coca-Cola Original; o volume da Sem Açúcar não conta para o degrau.</span>`;return;}
+    const vol=q[id]; let atual=-1;
+    if(E.lata){const v=volumes(q), d=degrauLata(v,q); if(esc&&d) atual=E.deg.findIndex(x=>x[0]===d.lata);}
+    else E.deg.forEach(([m],i)=>{if(esc&&vol>=m)atual=i;});
+    const chips=E.deg.map(([m,pr],i)=>`<span class="escDeg ${i===atual?'on':''}">${num(m/1000)} mil cx → ${pr}</span>`).join('');
+    const prox=E.deg.find(([m])=>vol<m);
+    let msg=!esc?'escadas desligadas':prox?`faltam ${num(prox[0]-vol)} cx para ${prox[1]}`:'melhor degrau de volume atingido';
+    if(E.lata&&esc){ const v=volumes(q), s=share355(q), falt=[];
+      if(v.cc<16000) falt.push(`16.000 cx de Coca Original 2L (hoje ${num(v.cc)})`);
+      const alvo = vol>=50000?0.02:0.01; if(s<alvo-1e-9) falt.push(`355ml PET em ${pct(alvo,0)} das cx unitárias (hoje ${pct(s,1)})`);
+      if(!RP_SUSP&&v.rp2<750) falt.push(`750 cx de RefPet 2L (hoje ${num(v.rp2)})`);
+      if(vol>=35000&&falt.length) msg+=` · para o degrau valer falta: ${falt.join('; ')}`;
+      else if(vol<35000) msg+=` · também exige 16.000 cx de Coca 2L e 355ml PET em 1% (2% a partir de 50 mil)`; }
+    el.innerHTML=`Escada de preço (só Coca-Cola Original): ${chips}<span class="escMsg">${msg}</span>`;});
+}
+function invPorCx(){return Math.max(0,+$('invest').value||0);}
+function liquido(R,inv){ const cxO=q.cco2, preco=R.L.cco2.cx;
+  const invTot=inv*(q.cco2+q.ccsa2); const rebCx=cxO?R.reb/cxO:0, invCx=cxO?invTot/cxO:0;
+  return {preco,rebCx,invCx,invTot,liq:preco-rebCx-invCx}; }
 function rebate(rlg,fx){ if(!fx) return 0; const r=FAIXAS[fx-1].r; return rlg.cc2l*r.cc2l+rlg.cc600lata*r.cc600lata+rlg.demais*r.demais; }
 
 /* ---------- UI ---------- */
@@ -393,7 +438,7 @@ function montaControles(){
   const tb=$('tab').querySelector('tbody'); let fam=''; let h='';
   P.forEach(p=>{
     if(p.fam!==fam){fam=p.fam;h+=`<tr class="fam"><td colspan="8">${fam}</td></tr>`;}
-    h+=`<tr id="r_${p.id}"><td>${p.nome}<br><span class="nota">cód. ${p.cod} · cx ${p.mult} · ${num(p.cxu,2)} cxu · pallet ${p.pal} cx</span></td>
+    h+=`<tr id="r_${p.id}"><td>${p.nome}<br><span class="nota">cód. ${p.cod} · cx ${p.mult} · ${num(p.cxu,2)} cxu · pallet ${p.pal} cx</span>${ESCADA[p.id]?`<div class="escInfo" id="esc_${p.id}"></div>`:''}</td>
       <td><input type="number" min="0" step="1" data-pal="${p.id}" aria-label="Pallets de ${p.nome}" title="${p.pal} cx por pallet"></td>
       <td><input type="number" min="0" step="10" data-id="${p.id}" aria-label="Caixas de ${p.nome}"></td>
       <td class="preco"></td><td class="pcx"></td><td class="fat"></td><td class="cxu"></td>
@@ -406,7 +451,7 @@ function montaControles(){
     if(id){ q[id]=Math.max(0,+e.target.value||0); const pi=tb.querySelector(`input[data-pal="${id}"]`); const pr=P.find(x=>x.id===id); pi.value=q[id]?+(q[id]/pr.pal).toFixed(1):''; render(); }
     else if(pid){ const pr=P.find(x=>x.id===pid); const n=Math.max(0,+e.target.value||0); q[pid]=Math.round(n*pr.pal); tb.querySelector(`input[data-id="${pid}"]`).value=q[pid]||''; render(); }
   });
-  ['tabela','ult3','escadas','rpsusp'].forEach(i=>$(i).addEventListener('input',render));
+  ['tabela','escadas','rpsusp','invest'].forEach(i=>$(i).addEventListener('input',render));
   sc.addEventListener('change',carregaCliente);
   $('mesRef').addEventListener('change',renderReal);
   $('abaReal').addEventListener('click',()=>aba('real'));
@@ -468,7 +513,7 @@ function renderReal(){
 function usarBase(){ if(!realAtual)return; P.forEach(p=>q[p.id]=realAtual.mix[p.id]);
   base={...realAtual}; $('pCliente').value=realAtual.nome; preencheInputs(); render(); aba('sim'); window.scrollTo(0,0); }
 function render(){
-  const tabId=$('tabela').value, ult3=Math.min(100,Math.max(0,+$('ult3').value||0))/100, esc=$('escadas').checked;
+  const tabId=$('tabela').value, ult3=0, esc=$('escadas').checked;
   RP_SUSP=$('rpsusp').checked; $('avisoRp').hidden=!RP_SUSP;
   const R=calc(q,tabId,ult3,esc);
   P.forEach(p=>{const l=R.L[p.id], tr=$('r_'+p.id);
@@ -493,8 +538,14 @@ function render(){
   $('falta').innerHTML=falta;
   $('kReb').textContent=brl(R.reb); $('kRebPct').textContent=R.tot.fat?pct(R.reb/R.tot.fat):'—';
   $('kFat').textContent=brl(R.tot.fat); $('kRl').textContent=brl(R.tot.rl);
-  const lc=R.L.cco2; $('kCc').textContent=brl2(lc.cx);
-  const rc=R.fx?FAIXAS[R.fx-1].r.cc2l:0; $('kCcLiq').textContent=brl2(lc.cx-lc.cx*P[0].rl*rc);
+  renderEscadas(esc);
+  const LQ=liquido(R,invPorCx()); const cxO=q.cco2;
+  $('lPreco').textContent=brl2(LQ.preco);
+  $('lReb').textContent=cxO?'− '+brl2(LQ.rebCx):'—';
+  $('lRebNota').textContent=cxO?`${brl(R.reb)} ÷ ${num(cxO)} cx`:'sem Coca-Cola 2L Original no pedido';
+  $('lInv').textContent=cxO?'− '+brl2(LQ.invCx):'—';
+  $('lInvNota').textContent=LQ.invTot?`${brl2(invPorCx())} × ${num(q.cco2+q.ccsa2)} cx (Original + Sem Açúcar) = ${brl(LQ.invTot)} ÷ ${num(cxO)} cx`:'nenhum investimento informado';
+  $('lLiq').textContent=cxO?brl2(LQ.liq):'—'; $('lLiqUn').textContent=cxO?`${brl2(LQ.liq/6)} por unidade`:'';
   // checks
   const v=R.v, c=[];
   if(tabId==='auto') c.push(R.ok?['ok',`Tabela aplicada: <b>${R.t.nome}</b> (${R.t.reqTxt}).`]:['no',`Nenhuma tabela do 2L atingida: mínimo de 5.000 cx de Coca-Cola Original 2L (hoje ${num(v.cc)}). Preço N-17 mostrado só como referência.`]);
@@ -502,11 +553,10 @@ function render(){
   if(RP_SUSP) c.push(['info',`RefPet suspensa: exigências de RefPet consideradas cumpridas (validação temporária). Pedido atual: ${num(v.rp2)} cx RefPet 2L, ${num(v.rp1)} cx RefPet 1L.`]);
   if(R.t.n22) c.push(['info',`N-22: 16.000 cx a preço N-17 e ${num(Math.max(0,v.cc-16000))} cx a R$ ${num(R.t.p,2)}; caixa média de ${brl2(R.pc.media*6)}.`]);
   c.push(v.turbo?['ok',`Turbo Lata ativo: ${num(v.lata)} cx de lata (mínimo 9.000).`]:['info',`Turbo Lata: ${num(v.lata)} de 9.000 cx de lata. Ao atingir, as latas ficam mais baratas (e o 2L Coca na N-17 cai para 9,28).`]);
-  if(esc&&v.lata>=35000){ const d=degrauLata(v,q), s=share355(q);
+  if(esc&&q.cco350>=35000){ const d=degrauLata(v,q), s=share355(q);
     c.push(d?['ok',`Escada de lata: Coca-Cola lata a R$ ${num(d.p,2)} (${num(d.lata/1000)} mil cx, ${num(d.rp)} cx RefPet 2L${d.s355?`, 355ml PET ${pct(d.s355,0)} das cx unitárias`:''}). 355ml hoje: ${pct(s,1)}.`]
-      :['info',`Escada de lata não atingida: exige 16.000 cx de Original 2L, RefPet 2L (500 ou 750 cx) e 355ml PET em 1% ou 2% das caixas unitárias. Hoje: ${num(v.rp2)} cx RefPet 2L, 355ml em ${pct(s,1)}.`]); }
+      :['info',`Escada de lata não atingida: exige 35 mil cx de Coca Original lata, 16.000 cx de Original 2L, RefPet 2L (500 ou 750 cx) e 355ml PET em 1% ou 2% das caixas unitárias. Hoje: ${num(v.rp2)} cx RefPet 2L, 355ml em ${pct(s,1)}.`]); }
   if(q.ccsa2) c.push(['info',`Coca-Cola Sem Açúcar 2L (${num(q.ccsa2)} cx) paga o preço da Original, mas não conta para o mínimo.`]);
-  if(ult3) c.push(['info',`${num(ult3*100)}% do 2L nos 3 últimos dias: + R$ 0,10 por unidade nessa parte.`]);
   c.push(R.fx?['ok',`Fideliza Neutraliza 23 na faixa ${R.fx}: ${R.fx<=2?pct(FAIXAS[R.fx-1].r.cc2l,2)+' sobre toda a receita líquida':`${pct(FAIXAS[R.fx-1].r.cc2l,1)} Coca 2L, ${pct(FAIXAS[R.fx-1].r.cc600lata,1)} Coca 600ml e lata, ${pct(FAIXAS[R.fx-1].r.demais,1)} demais`}.`]:['no',`Fideliza: abaixo da faixa 1 (22.000 cx unitárias), sem rebate.`]);
   $('checks').innerHTML=c.map(([k,t])=>`<li class="${k}">${t}</li>`).join('');
   if(base){ const dR=R.reb-base.reb, dC=R.tot.cxu-base.cxu;
@@ -542,7 +592,7 @@ function statusPdf(){
 }
 function esc(s){return String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 function gerarPdf(){
-  const {R,RM,pior,pago,ms,ult3}=LAST; const hoje=new Date();
+  const {R,RM,pior,pago,ms,ult3}=LAST; const hoje=new Date(); const LQ=liquido(R,invPorCx());
   const dt=hoje.toLocaleDateString('pt-BR'); const cli=$('pCliente').value.trim()||'Cliente';
   const val=$('pValid').value?new Date($('pValid').value+'T12:00').toLocaleDateString('pt-BR'):'';
   let itens='', fam='';
@@ -556,7 +606,7 @@ function gerarPdf(){
     `<tr class="tt"><td>Ciclo (paga pela faixa ${pior})</td><td></td><td>${num(RM.reduce((s,r)=>s+r.tot.cxu,0))}</td><td></td><td>${brl(pago)}</td></tr>`;
   const cond=[`Tabela do Coca-Cola 2L: <b>${R.t.nome}</b> (${R.t.reqTxt}).`,
     `Demais produtos pela tabela N-17${R.v.turbo?' Turbo Lata':''}.`,'Frete FOB e pagamento à vista.',
-    ult3?`${num(ult3*100)}% do 2L previsto para retirada nos 3 últimos dias do mês, com acréscimo de R$ 0,10 por unidade.`:'',
+    LQ.invTot?`Investimento adicional de ${brl2(invPorCx())} por caixa física de Coca-Cola 2L Original e Sem Açúcar, estimado em ${brl(LQ.invTot)} por mês.`:'',
     'Apuração mensal pelo volume digitado e retirado até o último dia do mês.',
     'Rebate pago ao fim do ciclo setembro a dezembro/2026, pela menor faixa atingida entre os quatro meses. Um mês abaixo da faixa 1 cancela o rebate do ciclo e retira o cliente da tabela até o próximo ciclo.',
     'Rebate calculado sobre a receita líquida; os valores desta proposta são estimativas e o valor final é apurado no fechamento do ciclo.'].filter(Boolean);
@@ -565,6 +615,7 @@ function gerarPdf(){
    <div><small>Responsável Bandeirantes</small><b>${esc($('pResp').value)||'—'}</b></div><div><small>Validade da proposta</small><b>${val||'—'}</b></div><div><small>Tabela de preços</small><b>TTV agosto/2026</b></div></div>
    <div class="d-res blk"><div><small>Volume mensal</small><b>${num(R.tot.cxf)} cx físicas</b></div><div><small>Caixas unitárias no mês</small><b>${num(R.tot.cxu)}</b></div>
    <div><small>Faixa Fideliza no ciclo</small><b>Faixa ${pior}</b></div><div class="d-dest"><small>Rebate estimado do ciclo</small><b>${brl(pago)}</b></div></div>
+   ${q.cco2?`<div class="d-liq blk"><b>Coca-Cola 2L Original, preço líquido estimado:</b> caixa ${brl2(LQ.preco)} − rebate ${brl2(LQ.rebCx)}${LQ.invTot?` − investimento adicional ${brl2(LQ.invCx)}`:''} = <b>${brl2(LQ.liq)} por caixa</b> (${brl2(LQ.liq/6)} por unidade).</div>`:''}
    <h2>Pedido mensal</h2><table><thead><tr><th>Produto</th><th>Caixas</th><th>Pallets</th><th>Preço unidade</th><th>Preço caixa</th><th>Valor</th><th>Caixas unitárias</th></tr></thead><tbody>${itens}</tbody></table>
    <div class="blk"><h2>Rebate Fideliza Neutraliza 23</h2><table><thead><tr><th>Faixa</th><th>Mínimo cx unitárias/mês</th><th>Retorno sobre a receita líquida</th></tr></thead><tbody>${fr}</tbody></table></div>
    <div class="blk"><h2>Plano do ciclo</h2><table><thead><tr><th>Mês</th><th>Volume vs. pedido</th><th>Caixas unitárias</th><th>Faixa do mês</th><th>Rebate estimado</th></tr></thead><tbody>${mesesT}</tbody></table></div>
