@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Simulador Fideliza - Neutraliza N23</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#ffffff; --panel:#f6f6f4; --ink:#141414; --mute:#66666a; --line:#dcdcd8;
+  --red:#E4002B; --redsoft:#fde7eb; --ok:#1b7a3a; --oksoft:#e3f3e8; --warn:#b36200; --warnsoft:#fbf0e0;
+  --f1:#f6c9d2; --f2:#f09aab; --f3:#e8617b; --f4:#E4002B; --f5:#8f001b;
+  --serif:"Bookman Old Style","Libre Baskerville",Georgia,serif;
+  --sans:"Archivo",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121213; --panel:#1c1c1e; --ink:#f1f1ee; --mute:#a2a2a6; --line:#34343a;
+    --redsoft:#3a0f18; --oksoft:#12301c; --warnsoft:#35260f; --ok:#4cc27a; --warn:#f0a040;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121213; --panel:#1c1c1e; --ink:#f1f1ee; --mute:#a2a2a6; --line:#34343a;
+  --redsoft:#3a0f18; --oksoft:#12301c; --warnsoft:#35260f; --ok:#4cc27a; --warn:#f0a040;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.45;font-variant-numeric:tabular-nums}
+.topo{border-top:6px solid var(--red);padding:22px 28px 14px;display:flex;flex-wrap:wrap;gap:12px 28px;align-items:flex-end;justify-content:space-between;border-bottom:1px solid var(--line)}
+h1{font-family:var(--serif);font-weight:700;font-size:30px;margin:0;letter-spacing:-.01em}
+.sub{color:var(--mute);margin:4px 0 0;max-width:60ch}
+.marca{font-family:var(--serif);font-size:14px;color:var(--mute)}
+.controles{display:flex;flex-wrap:wrap;gap:14px 20px;padding:16px 28px;border-bottom:1px solid var(--line);align-items:flex-end}
+.campo{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute)}
+select,input[type=number]{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px}
+select:focus-visible,input:focus-visible,button:focus-visible{outline:2px solid var(--red);outline-offset:1px}
+.chk{flex-direction:row;align-items:center;gap:8px;color:var(--ink);padding-bottom:8px}
+.nota{font-size:12.5px;color:var(--mute)}
+main{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:0;align-items:start}
+.pedido{padding:18px 28px 28px;min-width:0}
+.resultado{position:sticky;top:0;padding:20px 24px 28px;border-left:1px solid var(--line);background:var(--panel);min-height:100%}
+h2{font-family:var(--serif);font-size:19px;margin:0 0 10px;font-weight:700}
+.tabwrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:720px}
+th{font-weight:600;font-size:12.5px;color:var(--mute);text-align:right;padding:6px 8px;border-bottom:1px solid var(--line)}
+th:first-child{text-align:left}
+td{padding:4px 8px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+td:first-child{text-align:left;white-space:normal;min-width:190px}
+tr.fam td{font-family:var(--serif);font-weight:700;font-size:14px;border-bottom:none;padding-top:16px;text-align:left}
+td input{width:92px;text-align:right}
+td input[data-pal]{width:70px}
+tr.zero td:not(:first-child):not(:nth-child(2)){color:var(--mute)}
+tr.total td{font-weight:700;border-top:2px solid var(--ink);border-bottom:none;padding-top:8px}
+.tag{display:inline-block;font-size:11.5px;padding:1px 7px;border-radius:10px;border:1px solid var(--line);color:var(--mute)}
+.tag.cc2l{border-color:var(--red);color:var(--red)}
+.tag.cc600lata{border-color:var(--warn);color:var(--warn)}
+.preco.mudou{color:var(--red);font-weight:600}
+/* régua */
+.regua{margin:6px 0 14px}
+.trilho{position:relative;height:38px;border-radius:4px;overflow:hidden;background:var(--bg);border:1px solid var(--line)}
+.seg{position:absolute;top:0;bottom:0;border-left:1px solid var(--bg)}
+.marcador{position:absolute;top:-6px;bottom:-6px;width:3px;background:var(--ink);transform:translateX(-1px);transition:left .25s ease}
+.marcador::after{content:"";position:absolute;top:-2px;left:-5px;border:6.5px solid transparent;border-top-color:var(--ink)}
+.escala{position:relative;height:18px;font-size:11.5px;color:var(--mute)}
+.escala span{position:absolute;transform:translateX(-50%)}
+.faixaBig{display:flex;align-items:baseline;gap:12px;margin:4px 0 2px}
+.faixaBig b{font-family:var(--serif);font-size:44px;line-height:1}
+.faixaBig span{color:var(--mute)}
+.falta{font-size:14px;margin:6px 0 16px}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:12px 14px;margin:0 0 16px}
+.kpi{border-top:1px solid var(--line);padding-top:6px}
+.kpi small{display:block;color:var(--mute);font-size:12px}
+.kpi b{font-size:18px}
+.kpi.dest b{color:var(--red);font-size:24px}
+.checks{list-style:none;margin:0 0 6px;padding:0;font-size:13.5px}
+.checks li{padding:5px 0 5px 22px;position:relative;border-bottom:1px solid var(--line)}
+.checks li::before{position:absolute;left:0;font-weight:700}
+.checks li.ok::before{content:"✓";color:var(--ok)}
+.checks li.no::before{content:"✕";color:var(--red)}
+.checks li.info::before{content:"•";color:var(--mute)}
+.ciclo{padding:22px 28px 30px;border-top:1px solid var(--line)}
+.meses{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:12px 0}
+.mes{border:1px solid var(--line);border-radius:6px;padding:12px}
+.mes h3{margin:0 0 8px;font-size:15px;font-family:var(--serif)}
+.mes .linha{display:flex;justify-content:space-between;font-size:13.5px;padding:2px 0}
+.mes input{width:80px}
+.mes.pior{border-color:var(--red);box-shadow:inset 0 0 0 1px var(--red)}
+.escala span:last-child{transform:translateX(-60%)}
+.fx{display:inline-block;min-width:22px;text-align:center;border-radius:4px;padding:0 6px;font-weight:700;color:#fff}
+.cicloRes{display:flex;flex-wrap:wrap;gap:14px 36px;align-items:baseline;font-size:15px}
+.cicloRes b{font-size:22px}
+.alerta{background:var(--redsoft);border-left:4px solid var(--red);padding:8px 12px;margin:10px 0;font-size:14px}
+.regras{padding:0 28px 34px;color:var(--mute);font-size:13px;max-width:110ch}
+.regras summary{cursor:pointer;color:var(--ink);font-weight:600;padding:6px 0}
+.regras li{margin:3px 0}
+[hidden]{display:none!important}
+.abas{display:flex;gap:0;margin-left:auto;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.abas button{font:inherit;font-weight:600;padding:9px 16px;border:0;background:var(--bg);color:var(--mute);cursor:pointer}
+.abas button[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+.abas button:disabled{opacity:.4;cursor:not-allowed}
+.btn{font:inherit;padding:8px 14px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);cursor:pointer}
+.btn.prim{background:var(--red);border-color:var(--red);color:#fff;font-weight:600}
+.vreal{background:var(--panel);border-bottom:1px solid var(--line)}
+.realTopo{display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-between;align-items:center;padding:20px 28px 10px;border-left:6px solid var(--mute)}
+.realKpis{display:flex;flex-wrap:wrap;gap:12px 40px;padding:8px 28px 18px}
+.realKpis div small{display:block;color:var(--mute);font-size:12px}
+.realKpis div b{font-size:20px}
+#tabReal td,#tabReal th{background:transparent}
+#tabReal tbody td{color:var(--ink)}
+.simTopo{display:flex;flex-wrap:wrap;gap:14px 20px;padding:16px 28px 4px;align-items:flex-end;border-left:6px solid var(--red)}
+.compara{margin:12px 28px 0;padding:10px 14px;border:1px dashed var(--mute);border-radius:6px;font-size:14px;display:flex;flex-wrap:wrap;gap:6px 28px}
+.compara b{font-weight:700}
+.up{color:var(--ok);font-weight:700}.down{color:var(--red);font-weight:700}
+@media (max-width:980px){
+  .realTopo,.realKpis,.simTopo{padding-left:16px;padding-right:16px}
+  .abas{margin-left:0}
+  main{grid-template-columns:1fr}
+  .resultado{position:static;border-left:none;border-top:1px solid var(--line)}
+  .meses{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .topo,.controles,.pedido,.ciclo,.regras{padding-left:16px;padding-right:16px}
+}
+@media (prefers-reduced-motion:reduce){.marcador{transition:none}}
+input[type=text],input[type=date],textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px}
+.fechar{padding:22px 28px 30px;border-top:1px solid var(--line);border-left:6px solid var(--red)}
+.fecharCampos{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px 16px}
+.fecharCampos .largo{grid-column:1/-1}
+.fecharAcao{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;margin-top:14px}
+.btn.gerar{background:var(--red);border-color:var(--red);color:#fff;font-weight:700;font-size:16px;padding:11px 20px}
+.btn.gerar:disabled{background:var(--line);border-color:var(--line);color:var(--mute);cursor:not-allowed}
+.statusPdf{font-size:14px}
+.statusPdf.ok{color:var(--ok);font-weight:600}.statusPdf.no{color:var(--red)}
+.doc{display:none}
+@media (max-width:980px){.fecharCampos{grid-template-columns:1fr 1fr}.fechar{padding-left:16px;padding-right:16px}}
+.doc{display:none;width:184mm;font-family:var(--sans);color:#111;background:#fff;font-size:10.5px;line-height:1.35}
+  .doc *{color:#111}
+  .d-top{display:flex;justify-content:space-between;align-items:flex-end;border-top:5px solid #E4002B;padding-top:8px;margin-bottom:10px}
+  .d-top h1{font-family:var(--serif);font-size:20px;margin:0}
+  .d-top .d-emp{text-align:right;font-size:10.5px;color:#555}
+  .d-id{display:grid;grid-template-columns:repeat(3,1fr);gap:4px 16px;border:1px solid #ccc;padding:8px 10px;margin-bottom:10px}
+  .d-id small{display:block;color:#666;font-size:9.5px}
+  .d-id b{font-size:11.5px}
+  .doc h2{font-family:var(--serif);font-size:12.5px;margin:9px 0 4px;border-bottom:1px solid #999;padding-bottom:2px}
+  .doc table{width:100%;min-width:0;border-collapse:collapse;font-size:10.5px}
+  .doc th{font-size:9.5px;color:#555;text-align:right;padding:3px 5px;border-bottom:1px solid #999}
+  .doc th:first-child,.doc td:first-child{text-align:left}
+  .doc td{padding:3px 5px;text-align:right;border-bottom:1px solid #e2e2e2;white-space:nowrap}
+  .doc tr.tt td{font-weight:700;border-top:1.5px solid #111;border-bottom:none}
+  .doc tr.hl td{background:#fde7eb!important;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .d-res{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:6px 0}
+  .d-res div{border:1px solid #ccc;padding:6px 8px}
+  .d-res small{display:block;color:#666;font-size:9.5px}
+  .d-res b{font-size:14px}
+  .d-res .d-dest{border-color:#E4002B}
+  .d-res .d-dest b{color:#E4002B!important}
+  .doc ul{margin:4px 0;padding-left:16px}
+  .doc li{margin:2px 0}
+  .d-aviso{border-left:3px solid #E4002B;padding:4px 8px;margin:6px 0;background:#fde7eb;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .d-ass{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:26px}
+  .d-ass div{border-top:1px solid #111;padding-top:4px;text-align:center;font-size:10px}
+  .d-rod{margin-top:14px;font-size:9px;color:#777}
+  .doc .blk{break-inside:avoid}
+@media print{
+  @page{size:A4;margin:12mm 13mm}
+  html,body{background:#fff}
+  body>*:not(#doc){display:none!important}
+  .doc{display:block!important;margin:0;break-inside:avoid;page-break-after:avoid}
+}
+</style>
+</head>
+<body>
+<header class="topo">
+  <div>
+    <h1>Simulador Fideliza - Neutraliza N23</h1>
+    <p class="sub">Preço da tabela, faixa do Fideliza Neutraliza 23 e rebate do ciclo, a partir do pedido mensal em caixas físicas.</p>
+  </div>
+  <div class="marca">Refrescos Bandeirantes · GC.G2 · TTV agosto/2026</div>
+</header>
+
+<section class="controles">
+  <label class="campo">Cliente
+    <select id="cliente"></select>
+  </label>
+  <label class="campo" id="campoMes" hidden>Mês da compra
+    <select id="mesRef"></select>
+  </label>
+  <nav class="abas" role="tablist" aria-label="Visões">
+    <button role="tab" id="abaReal" aria-selected="false">Compra realizada</button>
+    <button role="tab" id="abaSim" aria-selected="true">Simulação da proposta</button>
+  </nav>
+</section>
+
+<section id="vReal" class="vreal" hidden>
+  <div class="realTopo">
+    <div>
+      <h2 id="realTit">Compra realizada</h2>
+      <p class="nota" id="realLojas" style="margin:2px 0 0;color:var(--ink)" hidden></p>
+      <p class="nota" style="margin:2px 0 0">Somente leitura. Valores faturados de fato no mês, com o preço da época. Nada aqui altera a simulação.</p>
+    </div>
+    <button class="btn prim" id="usarBase">Montar proposta a partir desta compra</button>
+  </div>
+  <div class="realKpis" id="realKpis"></div>
+  <div class="tabwrap" style="padding:0 28px 26px"><table id="tabReal"><thead><tr>
+    <th>Produto</th><th>Caixas físicas</th><th>Preço médio caixa</th><th>Faturado</th><th>Receita líquida</th><th>Caixas unitárias</th><th>Grupo do rebate</th>
+  </tr></thead><tbody></tbody></table></div>
+</section>
+
+<section id="vSim">
+<div class="simTopo">
+  <label class="campo">Tabela do Coca-Cola 2L
+    <select id="tabela"></select>
+  </label>
+  <label class="campo">% do 2L retirado nos 3 últimos dias
+    <input type="number" id="ult3" min="0" max="100" step="5" value="0">
+  </label>
+  <label class="campo chk"><input type="checkbox" id="rpsusp" checked> RefPet suspensa (exigência validada)</label>
+  <label class="campo chk"><input type="checkbox" id="escadas" checked> Escadas de volume (lata, 600ml, 1L)</label>
+  <button class="btn" id="zerar">Limpar proposta</button>
+</div>
+<div class="compara" id="compara" hidden></div>
+<div class="alerta" id="avisoRp" style="margin:12px 28px 0">Validação temporária: por falta de produto, a exigência de RefPet está suspensa neste mês e considerada cumprida em todas as tabelas e na escada de lata. Quando a RefPet voltar, desmarque "RefPet suspensa" para aplicar a regra normal.</div>
+<main>
+  <section class="pedido">
+    <h2>Proposta do mês</h2>
+    <div class="tabwrap"><table id="tab"><thead><tr>
+      <th>Produto</th><th>Pallets</th><th>Caixas físicas</th><th>TTV unidade</th><th>Preço caixa</th><th>Faturamento</th><th>Caixas unitárias</th><th>Grupo do rebate</th>
+    </tr></thead><tbody></tbody></table></div>
+  </section>
+  <aside class="resultado" aria-live="polite">
+    <h2>Faixa do mês</h2>
+    <div class="faixaBig"><b id="fxNome">—</b><span id="fxCxu"></span></div>
+    <div class="regua">
+      <div class="trilho" id="trilho"></div>
+      <div class="escala" id="escala"></div>
+    </div>
+    <div class="falta" id="falta"></div>
+    <div class="kpis">
+      <div class="kpi dest"><small>Rebate do mês</small><b id="kReb">—</b></div>
+      <div class="kpi"><small>Rebate sobre o faturamento</small><b id="kRebPct">—</b></div>
+      <div class="kpi"><small>Faturamento (TTV)</small><b id="kFat">—</b></div>
+      <div class="kpi"><small>Receita líquida estimada</small><b id="kRl">—</b></div>
+      <div class="kpi"><small>Coca-Cola 2L, preço da caixa</small><b id="kCc">—</b></div>
+      <div class="kpi"><small>Coca-Cola 2L, caixa líquida do rebate</small><b id="kCcLiq">—</b></div>
+    </div>
+    <h2>Condições</h2>
+    <ul class="checks" id="checks"></ul>
+  </aside>
+</main>
+
+<section class="ciclo">
+  <h2>Ciclo setembro a dezembro</h2>
+  <p class="nota" style="margin:0;max-width:90ch">Cada mês repete o pedido acima na proporção informada. O rebate do ciclo é pago pela pior faixa entre os quatro meses; um mês abaixo da faixa 1 zera o ciclo e tira o cliente da tabela até o próximo.</p>
+  <div class="meses" id="meses"></div>
+  <div class="cicloRes" id="cicloRes"></div>
+</section>
+
+<section class="fechar" id="fechar">
+  <h2>Registrar a negociação</h2>
+  <p class="nota" style="margin:0 0 12px;max-width:90ch">Quando a proposta estiver acertada com o cliente, gere o resumo em PDF para registrar e enviar. O botão só fica disponível quando a proposta atende a tabela do 2L e chega pelo menos à faixa 1 em todos os meses do ciclo.</p>
+  <div class="fecharCampos">
+    <label class="campo">Cliente / rede na proposta<input type="text" id="pCliente" placeholder="Nome do cliente"></label>
+    <label class="campo">CNPJ ou código do cliente<input type="text" id="pCod" placeholder="Opcional"></label>
+    <label class="campo">Responsável Bandeirantes<input type="text" id="pResp" placeholder="Nome e cargo"></label>
+    <label class="campo">Validade da proposta<input type="date" id="pValid"></label>
+    <label class="campo largo">Observações para o cliente<textarea id="pObs" rows="2" placeholder="Condições combinadas, prazos de retirada etc."></textarea></label>
+  </div>
+  <div class="fecharAcao">
+    <button class="btn gerar" id="gerarPdf" disabled>Gerar proposta em PDF</button>
+    <span id="statusPdf" class="statusPdf"></span>
+    <span class="nota" style="flex-basis:100%">Na janela de impressão, para PDF ou impressora: Papel <b>A4</b>, Escala <b>Padrão (100%)</b>, Margens <b>Padrão</b>. Assim o PDF e a folha impressa saem com o mesmo tamanho.</span>
+  </div>
+</section>
+
+</section>
+
+<details class="regras">
+  <summary>Premissas e fontes do cálculo</summary>
+  <ul>
+    <li>Preços: aba "AGOSTO 2026" da planilha TTV e Regras Neutraliza (pós 2º ajuste de pauta). Caixa = TTV unitária × unidades da caixa.</li>
+    <li>Coca-Cola 2L: N-17 exige 16.000 cx de Original; N-23 exige 5.000 ou 10.000 cx de Original, com as variações de RefPet da tabela; N-22 soma 16.000 cx a preço N-17 com o volume N-22 (50, 100 ou 150 mil cx) e exige 750 cx de RefPet 2L. Na opção automática vale a tabela elegível de menor preço.</li>
+    <li>Coca-Cola Sem Açúcar tem sempre o mesmo preço TTV da Original, em todas as embalagens e degraus de escada. No 2L, não conta para os mínimos das tabelas.</li>
+    <li>Demais produtos saem pela N-17; com 9.000 cx de lata (em caixas de 12) passam à N-17 Turbo Lata.</li>
+    <li>Escadas: lata Coca-Cola 3,15 (35 mil cx + 500 RP 2L + 355ml em 1%), 3,12 (35 mil + 750 + 1%), 3,06 (50 mil + 750 + 2%), 2,92 (75 mil + 750 + 2%) ou 2,98 (75 mil + 750, sem 355ml), todas com 16.000 cx de Coca 2L. O percentual do 355ml PET é sobre o total de caixas unitárias do pedido; 600ml Coca 4,43 (10 mil) e 4,33 (20 mil); 1L Coca 5,51 (7 mil) e 5,39 (12 mil), somando Original e Sem Açúcar.</li>
+    <li>RefPet: exigências de 50, 100, 150, 500 e 750 cx de RefPet fazem parte da regra, mas estão temporariamente validadas por falta de produto (opção "RefPet suspensa").</li>
+    <li>Retirada nos 3 últimos dias do mês acrescenta R$ 0,10 por unidade no 2L.</li>
+    <li>Fideliza Neutraliza 23: faixa pelo total de caixas unitárias do mês (22, 25, 30, 35 e 75 mil). Grupos: Coca-Cola 2L = só Original; 600ml e lata = todos os SKUs de 600ml e de lata; demais = todo o resto (2L que não é Coca Original, 2,5L, 1,5L, 1L, 355ml PET e RefPet). Cervejas ficam fora.</li>
+    <li>Caixa unitária e pallet: fator de conversão e paletização do cadastro de produtos, por SKU em caixa. Pallets aceitam fração e são arredondados para caixas inteiras.</li>
+    <li>Receita líquida: razão receita líquida ÷ valor faturado de cada SKU nas compras dos clientes Neutraliza (relatório AM_FAT_BND_MOV_VENDA, agosto e setembro/2026, já com a TTV de agosto — compras realizadas disponíveis de maio a setembro/2026, setembro parcial até 23/09; junho+julho ou média da família de embalagem quando o SKU não aparece em agosto/setembro).</li>
+  </ul>
+</details>
+
+<div id="doc" class="doc" aria-hidden="true"></div>
+<script>
+const D = {"prods": [{"id": "cco2", "nome": "Coca-Cola Original 2L", "fam": "2L", "cod": "3072", "mult": 6, "cxu": 2.1134, "nt": 9.34, "tl": 9.28, "grp": "cc2l", "rl": 0.6837, "rlsrc": "ago+set/26 (913700 cx)", "pal": 100}, {"id": "ccsa2", "nome": "Coca-Cola Sem Açúcar 2L", "fam": "2L", "cod": "1510", "mult": 6, "cxu": 2.1134, "nt": 9.34, "tl": 9.28, "grp": "demais", "rl": 0.6925, "rlsrc": "ago+set/26 (237100 cx)", "pal": 100}, {"id": "ftlar2", "nome": "Fanta Laranja 2L", "fam": "2L", "cod": "1062", "mult": 6, "cxu": 2.1134, "nt": 7.48, "tl": 7.48, "grp": "demais", "rl": 0.6645, "rlsrc": "ago+set/26 (100 cx)", "pal": 100}, {"id": "ftuva2", "nome": "Fanta Uva 2L", "fam": "2L", "cod": "1080", "mult": 6, "cxu": 2.1134, "nt": 7.48, "tl": 7.48, "grp": "demais", "rl": 0.6855, "rlsrc": "média da família (ago+set/26)", "pal": 100}, {"id": "sprite2", "nome": "Sprite 2L", "fam": "2L", "cod": "2446", "mult": 6, "cxu": 2.1134, "nt": 7.48, "tl": 7.48, "grp": "demais", "rl": 0.6864, "rlsrc": "jun+jul/26 (100 cx)", "pal": 100}, {"id": "kuat2", "nome": "Kuat 2L", "fam": "2L", "cod": "1262", "mult": 6, "cxu": 2.1134, "nt": 6.03, "tl": 6.03, "grp": "demais", "rl": 0.6855, "rlsrc": "média da família (ago+set/26)", "pal": 100}, {"id": "cco25", "nome": "Coca-Cola Original 2,5L", "fam": "2,5L e 1,5L", "cod": "2730", "mult": 6, "cxu": 2.642, "nt": 10.86, "tl": 10.86, "grp": "demais", "rl": 0.7134, "rlsrc": "ago+set/26 (8700 cx)", "pal": 75}, {"id": "cco15", "nome": "Coca-Cola Original 1,5L", "fam": "2,5L e 1,5L", "cod": "1326", "mult": 6, "cxu": 1.5851, "nt": 7.71, "tl": 7.71, "grp": "demais", "rl": 0.6868, "rlsrc": "ago+set/26 (12760 cx)", "pal": 110}, {"id": "ccsa15", "nome": "Coca-Cola Sem Açúcar 1,5L", "fam": "2,5L e 1,5L", "cod": "1544", "mult": 6, "cxu": 1.5851, "nt": 7.71, "tl": 7.71, "grp": "demais", "rl": 0.699, "rlsrc": "ago+set/26 (10340 cx)", "pal": 110}, {"id": "ftlar15", "nome": "Fanta Laranja 1,5L", "fam": "2,5L e 1,5L", "cod": "1293", "mult": 6, "cxu": 1.5851, "nt": 6.17, "tl": 6.17, "grp": "demais", "rl": 0.6996, "rlsrc": "média da família (ago+set/26)", "pal": 110}, {"id": "rpcc2", "nome": "RefPet Coca-Cola 2L", "fam": "Retornável (RefPet)", "cod": "3074", "mult": 12, "cxu": 4.2268, "nt": 6.9, "tl": 6.9, "grp": "demais", "rl": 0.6893, "rlsrc": "ago+set/26 (657 cx)", "pal": 50}, {"id": "rpft2", "nome": "RefPet Fanta 2L", "fam": "Retornável (RefPet)", "cod": "1992", "mult": 12, "cxu": 4.2268, "nt": 5.52, "tl": 5.52, "grp": "demais", "rl": 0.6893, "rlsrc": "média da família (ago+set/26)", "pal": 50}, {"id": "rpcc1", "nome": "RefPet Coca-Cola 1L", "fam": "Retornável (RefPet)", "cod": "3159", "mult": 12, "cxu": 2.1134, "nt": 4.13, "tl": 4.13, "grp": "demais", "rl": 0.6893, "rlsrc": "média da família (ago+set/26)", "pal": 50}, {"id": "rpft1", "nome": "RefPet Fanta 1L", "fam": "Retornável (RefPet)", "cod": "3163", "mult": 12, "cxu": 2.1134, "nt": 3.31, "tl": 3.31, "grp": "demais", "rl": 0.6893, "rlsrc": "média da família (ago+set/26)", "pal": 90}, {"id": "cco1", "nome": "Coca-Cola Original 1L", "fam": "1L", "cod": "2872", "mult": 6, "cxu": 1.0567, "nt": 5.61, "tl": 5.61, "grp": "demais", "rl": 0.6776, "rlsrc": "ago+set/26 (114984 cx)", "pal": 168}, {"id": "ccsa1", "nome": "Coca-Cola Sem Açúcar 1L", "fam": "1L", "cod": "2789", "mult": 6, "cxu": 1.0567, "nt": 5.61, "tl": 5.61, "grp": "demais", "rl": 0.7049, "rlsrc": "ago+set/26 (48468 cx)", "pal": 168}, {"id": "ftlar1", "nome": "Fanta Laranja 1L", "fam": "1L", "cod": "1469", "mult": 6, "cxu": 1.0567, "nt": 4.49, "tl": 4.49, "grp": "demais", "rl": 0.7068, "rlsrc": "jun+jul/26 (70 cx)", "pal": 168}, {"id": "cco600", "nome": "Coca-Cola Original 600ml", "fam": "600ml e 355ml PET", "cod": "1194", "mult": 12, "cxu": 1.2681, "nt": 4.49, "tl": 4.49, "grp": "cc600lata", "rl": 0.66, "rlsrc": "ago+set/26 (93200 cx)", "pal": 140}, {"id": "ccsa600", "nome": "Coca-Cola Sem Açúcar 600ml", "fam": "600ml e 355ml PET", "cod": "1511", "mult": 12, "cxu": 1.2681, "nt": 4.49, "tl": 4.49, "grp": "cc600lata", "rl": 0.6813, "rlsrc": "ago+set/26 (40810 cx)", "pal": 140}, {"id": "ftlar600", "nome": "Fanta Laranja 600ml", "fam": "600ml e 355ml PET", "cod": "1196", "mult": 12, "cxu": 1.2681, "nt": 3.82, "tl": 3.82, "grp": "cc600lata", "rl": 0.661, "rlsrc": "jun+jul/26 (460 cx)", "pal": 140}, {"id": "sprite600", "nome": "Sprite 600ml", "fam": "600ml e 355ml PET", "cod": "2541", "mult": 12, "cxu": 1.268, "nt": 3.82, "tl": 3.82, "grp": "cc600lata", "rl": 0.6186, "rlsrc": "jun+jul/26 (30 cx)", "pal": 140}, {"id": "cco355", "nome": "Coca-Cola Original 355ml PET", "fam": "600ml e 355ml PET", "cod": "1789", "mult": 12, "cxu": 0.7503, "nt": 3.54, "tl": 3.38, "grp": "demais", "rl": 0.6175, "rlsrc": "ago+set/26 (5260 cx)", "pal": 220}, {"id": "cco350", "nome": "Coca-Cola Original lata 350ml", "fam": "Latas", "cod": "1218", "mult": 12, "cxu": 0.7397, "nt": 3.54, "tl": 3.38, "grp": "cc600lata", "rl": 0.6423, "rlsrc": "ago+set/26 (381810 cx)", "pal": 286}, {"id": "ccsa350", "nome": "Coca-Cola Sem Açúcar lata 350ml", "fam": "Latas", "cod": "1738", "mult": 12, "cxu": 0.7397, "nt": 3.54, "tl": 3.38, "grp": "cc600lata", "rl": 0.6594, "rlsrc": "ago+set/26 (189618 cx)", "pal": 286}, {"id": "ftlar350", "nome": "Fanta Laranja lata 350ml", "fam": "Latas", "cod": "1220", "mult": 12, "cxu": 0.7397, "nt": 3.01, "tl": 2.88, "grp": "cc600lata", "rl": 0.6681, "rlsrc": "ago+set/26 (11154 cx)", "pal": 286}, {"id": "ftuva350", "nome": "Fanta Uva lata 350ml", "fam": "Latas", "cod": "1329", "mult": 12, "cxu": 0.7397, "nt": 3.01, "tl": 2.88, "grp": "cc600lata", "rl": 0.6673, "rlsrc": "ago+set/26 (3146 cx)", "pal": 286}, {"id": "sprite350", "nome": "Sprite lata 350ml (cx 6)", "fam": "Latas", "cod": "3553", "mult": 6, "cxu": 0.3698, "nt": 3.01, "tl": 2.88, "grp": "cc600lata", "rl": 0.6486, "rlsrc": "ago+set/26 (9360 cx)", "pal": 585}], "clientes": [{"id": "1206346", "nome": "Araguaia Bebidas", "rota": "412", "meses": {"202605": {"real": {"cco600": [10220, 526118.68, 346604.86], "ccsa2": [3900, 200557.62, 138257.14], "ccsa600": [2660, 137031.94, 93310.75], "cco25": [300, 18612.54, 12828.11], "ccsa1": [3360, 104094.57, 72336.36], "cco1": [11928, 368532.66, 245738.36], "cco2": [19100, 982170.99, 670576.16], "rpcc2": [150, 11826.36, 8112.75]}, "fora": {"cxf": 0, "fat": 0}}, "202606": {"real": {"cco600": [10080, 531004.78, 352722.68], "ccsa2": [2700, 144333.56, 100645.67], "ccsa600": [1960, 103426.46, 70961.62], "ccsa15": [110, 5036.97, 3541.93], "ccsa1": [336, 10745.1, 7600.42], "cco1": [12096, 386874.46, 262705.54], "cco2": [19400, 1037172.6, 716666.93]}, "fora": {"cxf": 0, "fat": 0}}, "202607": {"real": {"cco600": [10080, 529780.86, 351623.02], "ftlar350": [286, 10230.84, 6953.66], "ccsa2": [5300, 283321.44, 197563.73], "ccsa600": [1120, 58867.7, 40340.04], "ccsa1": [1176, 37607.84, 26601.45], "cco1": [12096, 386874.46, 262705.51], "cco2": [17900, 956978.84, 661254.51], "rpcc2": [150, 12292.64, 8531.69]}, "fora": {"cxf": 0, "fat": 0}}, "202608": {"real": {"ftlar350": [286, 10328.22, 6976.38], "cco15": [440, 20353.5, 13978.89], "ccsa2": [9300, 502245.29, 348088.85], "ccsa600": [840, 44658.68, 30426.08], "cco25": [300, 19546.87, 13945.28], "ccsa1": [1344, 43460.51, 30528.74], "cco2": [24200, 1306858.2, 897506.97], "sprite350": [585, 10567.54, 6940.49]}, "fora": {"cxf": 0, "fat": 0}}}}, {"id": "1204581", "nome": "Atac. Sao Jorge", "rota": "431", "meses": {"202607": {"real": {"cco600": [1120, 59680.52, 39802.4], "ftlar350": [500, 17886.08, 12156.73], "cco15": [220, 10071.85, 6957.45], "ftuva350": [320, 11447.09, 7780.31], "ccsa600": [700, 37302.31, 25670.75], "ccsa15": [220, 10073.94, 7083.86], "cco25": [450, 29026.69, 20708.47], "ccsa1": [672, 22375.5, 15963.34], "cco1": [1512, 50366.6, 34641.75], "sprite350": [200, 3574.76, 2361.2]}, "fora": {"cxf": 0, "fat": 0}}}}, {"id": "1211448", "nome": "Atacadão Centro Oeste", "rota": "131", "meses": {"202608": {"real": {"rpcc2": [4, 369.61, 262.81]}, "fora": {"cxf": 656, "fat": 18503.24}}}}, {"id": "1178210", "nome": "Canaa Campinas", "rota": "411", "meses": {"202606": {"real": {}, "fora": {"cxf": 2112, "fat": 59136.0}}}}, {"id": "1204593", "nome": "Canaa Campinas", "rota": "412", "meses": {"202605": {"real": {"cco600": [10080, 517704.37, 340772.17], "cco350": [74932, 2544973.27, 1616500.9], "ftlar350": [1716, 56220.59, 37084.79], "ftuva350": [286, 9370.1, 6180.79], "ccsa2": [17600, 882854.9, 603959.88], "ccsa600": [5880, 302010.81, 205455.52], "ccsa15": [1760, 77528.26, 53918.59], "ccsa350": [30492, 1038277.79, 677446.39], "cco355": [1540, 51372.5, 31687.75], "cco25": [1125, 69797.02, 49594.59], "ccsa1": [4032, 126786.96, 89269.41], "cco1": [7560, 237696.26, 160506.8], "cco2": [44200, 2268784.54, 1548127.12], "rpcc2": [750, 59131.82, 40563.76], "sprite350": [1170, 19161.16, 12240.99]}, "fora": {"cxf": 0, "fat": 0}}, "202606": {"real": {"cco600": [7280, 382619.48, 253949.88], "cco350": [63778, 2258039.71, 1458447.91], "ccsa2": [10400, 534820.31, 368685.75], "ccsa600": [1400, 73584.62, 50425.03], "ccsa350": [44616, 1579678.11, 1045571.31], "cco355": [660, 22892.99, 14367.73], "cco25": [1200, 77404.52, 55222.56], "cco1": [4368, 142851.61, 97693.4], "cco2": [98300, 5076519.79, 3470666.28], "rpcc2": [750, 61463.17, 42658.49]}, "fora": {"cxf": 0, "fat": 0}}, "202607": {"real": {"cco600": [14560, 765238.96, 507899.76], "cco350": [66924, 2369422.83, 1530389.28], "ftlar350": [858, 29249.5, 19565.28], "cco15": [2090, 95682.43, 66095.73], "ftuva350": [572, 19499.67, 13043.53], "ccsa2": [22600, 1162205.68, 801182.5], "ccsa600": [5040, 264904.63, 181530.11], "ccsa15": [1650, 75554.44, 53128.92], "ccsa350": [3718, 131639.84, 87130.94], "cco355": [1060, 39983.83, 25965.32], "cco25": [1725, 111268.99, 79382.43], "ccsa1": [2520, 82424.15, 58652.71], "cco1": [17472, 571406.45, 390773.61], "cco2": [143000, 7416062.67, 5076822.74], "rpcc2": [350, 28682.81, 19907.31], "sprite350": [1170, 19933.18, 12934.16]}, "fora": {"cxf": 0, "fat": 0}}, "202608": {"real": {"cco600": [10920, 580532.12, 383148.77], "cco350": [84942, 3037000.96, 1949830.98], "ftlar350": [572, 19763.5, 13150.99], "cco15": [2860, 132297.77, 90862.8], "ccsa2": [18200, 945761.73, 647847.61], "ccsa15": [5720, 264603.61, 184970.73], "ccsa350": [29744, 1063503.54, 699643.58], "cco355": [840, 29437.49, 18176.22], "cco25": [975, 63527.34, 45322.19], "cco1": [13104, 433342.16, 294414.59], "cco2": [145600, 7597557.97, 5161600.19]}, "fora": {"cxf": 0, "fat": 0}}, "202609": {"real": {"cco600": [3640, 189149.76, 123797.92], "cco350": [37180, 1329327.02, 853461.37], "ftlar350": [1430, 49408.73, 32877.45], "cco15": [440, 20353.51, 13978.91], "ftuva350": [572, 19763.5, 13150.98], "ccsa2": [12300, 639168.64, 437831.07], "ccsa600": [1820, 94580.02, 63964.02], "ccsa15": [1980, 91593.57, 64028.36], "ccsa350": [10868, 388587.83, 255639.0], "cco355": [660, 23129.45, 14281.33], "ccsa1": [2856, 92353.57, 64873.57], "cco1": [8736, 282600.86, 190621.28], "cco2": [117200, 6116520.12, 4155616.26]}, "fora": {"cxf": 0, "fat": 0}}}}, {"id": "1216240", "nome": "Canaa Garavelo", "rota": "431", "meses": {"202606": {"real": {"cco600": [2380, 125087.15, 83022.1], "cco350": [5720, 202514.78, 130802.55], "ftlar350": [858, 29249.5, 19565.29], "cco15": [330, 15107.76, 10436.17], "ccsa2": [7200, 370260.22, 255243.98], "ccsa600": [420, 22075.4, 15127.5], "ccsa15": [110, 5036.97, 3541.93], "ccsa350": [3146, 111387.57, 73726.21], "cco355": [220, 7631.0, 4789.23], "cco25": [350, 22576.32, 16106.59], "ccsa1": [1176, 38464.59, 27371.27], "cco1": [2352, 76920.08, 52604.12], "cco2": [25400, 1306133.15, 891760.97], "rpcc2": [100, 8195.09, 5687.81], "sprite350": [1755, 29899.78, 19401.28]}, "fora": {"cxf": 0, "fat": 0}}, "202607": {"real": {"cco600": [2436, 128030.38, 84975.57], "cco350": [5720, 202514.77, 130802.53], "ftlar350": [286, 9749.83, 6521.76], "cco15": [660, 30215.53, 20872.35], "ccsa2": [4800, 246840.14, 170162.64], "ccsa600": [140, 7358.47, 5042.51], "ccsa15": [110, 5036.97, 3541.93], "ccsa350": [2288, 81009.14, 53619.06], "cco355": [220, 7631.0, 4789.23], "cco25": [75, 4837.78, 3451.41], "ccsa1": [504, 16484.83, 11730.55], "cco1": [1512, 49448.62, 33816.93], "cco2": [24400, 1255513.61, 857373.83], "rpcc2": [100, 8195.09, 5687.8]}, "fora": {"cxf": 0, "fat": 0}}, "202608": {"real": {"cco600": [1680, 89917.83, 59489.75], "cco350": [4862, 173835.07, 111606.5], "ftlar350": [572, 19763.5, 13151.0], "cco15": [990, 45795.4, 31452.54], "ccsa2": [3500, 181877.26, 124586.07], "ccsa600": [980, 52101.8, 35497.1], "ccsa15": [330, 15265.61, 10671.41], "ccsa350": [3146, 112485.94, 74000.75], "cco355": [440, 15419.64, 9520.9], "cco25": [300, 19546.87, 13945.29], "ccsa1": [840, 27767.99, 19624.24], "cco1": [2520, 83335.03, 56618.19], "cco2": [18000, 945932.06, 644106.12], "rpcc2": [150, 12419.93, 8561.18], "sprite350": [1170, 20212.41, 13052.52]}, "fora": {"cxf": 0, "fat": 0}}, "202609": {"real": {"cco600": [280, 14549.99, 9522.92], "cco350": [3146, 112481.52, 72215.97], "cco15": [880, 40707.03, 27957.82], "ccsa2": [5100, 265021.14, 181539.69], "ccsa600": [280, 14550.79, 9840.64], "ccsa15": [330, 15265.6, 10671.4], "ccsa350": [1716, 61355.97, 40364.05], "cco25": [75, 4886.72, 3486.32], "ccsa1": [1008, 32595.38, 22896.58], "cco1": [1680, 54346.3, 36657.94], "cco2": [10800, 561194.62, 380745.02]}, "fora": {"cxf": 0, "fat": 0}}}}, {"id": "1208748", "nome": "Canaa Itumbiara", "rota": "I31", "meses": {"202605": {"real": {"cco600": [140, 7190.34, 4732.95], "cco350": [1144, 38854.56, 24679.42], "ftlar1": [168, 4313.37, 3017.67], "ccsa2": [3000, 153025.22, 105228.63], "ccsa600": [70, 3595.37, 2445.9], "ccsa350": [858, 29142.13, 18996.32], "ccsa1": [84, 2641.39, 1859.78], "cco1": [168, 5282.14, 3566.82], "cco2": [10700, 537661.24, 364377.69]}, "fora": {"cxf": 0, "fat": 0}}, "202606": {"real": {"cco600": [440, 23125.37, 15348.66], "ftlar600": [40, 1814.6, 1199.42], "cco350": [2002, 70880.17, 45780.9], "ftlar1": [70, 1864.84, 1318.07], "ccsa2": [2400, 123420.07, 85081.32], "ccsa600": [50, 2628.02, 1800.89], "ccsa350": [572, 20252.28, 13404.78], "sprite600": [30, 1361.0, 841.91], "ccsa1": [336, 10989.88, 7820.36], "cco1": [434, 14193.58, 9706.72], "cco2": [12000, 622691.95, 426355.08]}, "fora": {"cxf": 0, "fat": 0}}, "202607": {"real": {"cco600": [140, 7358.07, 4883.66], "ccsa2": [1600, 82280.05, 56720.86], "ccsa600": [70, 3679.23, 2521.25], "ccsa1": [84, 2747.47, 1955.09], "cco1": [672, 21977.17, 15029.75], "cco2": [12200, 632976.46, 433376.81]}, "fora": {"cxf": 0, "fat": 0}}, "202608": {"real": {"cco600": [420, 22328.18, 14736.5], "cco350": [572, 20451.18, 13130.18], "ccsa2": [3000, 155894.79, 106788.06], "ccsa600": [70, 3721.56, 2535.51], "ccsa350": [572, 20451.98, 13454.68], "ccsa1": [588, 19437.59, 13736.96], "cco1": [336, 11111.35, 7549.09], "cco2": [11900, 624065.17, 424656.71]}, "fora": {"cxf": 0, "fat": 0}}, "202609": {"real": {"ccsa2": [700, 36375.45, 24917.22], "cco355": [100, 3504.46, 2163.84], "cco1": [840, 27173.15, 18328.97], "cco2": [2400, 124709.92, 84610.02]}, "fora": {"cxf": 0, "fat": 0}}}}, {"id": "1192470", "nome": "Canaa Trindade", "rota": "431", "meses": {"202606": {"real": {"ftlar2": [100, 4439.95, 3143.78], "cco600": [980, 51506.5, 34185.62], "cco350": [3432, 121508.84, 78481.52], "ftlar350": [286, 9749.83, 6521.76], "cco15": [110, 5035.92, 3478.72], "ccsa2": [1600, 82280.05, 56720.88], "ccsa600": [140, 7358.47, 5042.5], "ccsa15": [110, 5036.97, 3541.92], "ccsa350": [1716, 60756.85, 40214.35], "cco355": [220, 7631.0, 4789.24], "sprite2": [100, 4440.02, 3047.67], "cco25": [75, 4837.78, 3451.41], "ccsa1": [672, 21979.77, 15640.73], "cco1": [1176, 38460.02, 26302.06], "cco2": [11900, 611928.52, 417793.53], "sprite350": [585, 9966.59, 6467.1]}, "fora": {"cxf": 100, "fat": 4271.94}}, "202607": {"real": {"cco600": [700, 36790.34, 24418.28], "cco350": [3432, 121508.86, 78481.53], "ftlar350": [286, 9749.83, 6521.76], "cco15": [330, 15107.77, 10436.17], "ccsa2": [1700, 87422.55, 60265.93], "ccsa600": [280, 14716.94, 10085.0], "ccsa15": [110, 5036.97, 3541.92], "ccsa350": [1430, 50630.7, 33511.9], "cco355": [220, 7631.0, 4789.24], "cco25": [75, 4837.78, 3451.41], "ccsa1": [336, 10989.88, 7820.36], "cco1": [336, 10988.57, 7514.87], "cco2": [4700, 241686.06, 165010.9], "rpcc2": [50, 4097.55, 2843.89], "sprite350": [585, 9966.59, 6467.1]}, "fora": {"cxf": 0, "fat": 0}}, "202608": {"real": {"cco600": [420, 22328.18, 14736.5], "cco350": [2574, 92030.35, 59085.81], "cco15": [110, 5088.38, 3494.73], "ccsa2": [1300, 67554.41, 46274.83], "ccsa15": [110, 5088.54, 3557.14], "ccsa350": [2002, 71581.96, 47091.38], "cco355": [220, 7709.82, 4760.45], "cco25": [75, 4886.72, 3486.33], "ccsa1": [168, 5553.6, 3924.85], "cco1": [504, 16667.03, 11323.67], "cco2": [3600, 197672.56, 136446.07], "rpcc2": [50, 4139.98, 2853.73]}, "fora": {"cxf": 0, "fat": 0}}, "202609": {"real": {"ccsa2": [600, 31178.96, 21357.62], "ccsa600": [140, 7275.39, 4920.32], "cco1": [504, 16303.89, 10997.38], "cco2": [4100, 213046.11, 144542.1]}, "fora": {"cxf": 0, "fat": 0}}}}, {"id": "1221891", "nome": "Canaa Uruaçu", "rota": "U31", "meses": {"202606": {"real": {}, "fora": {"cxf": 84672, "fat": 2789597.44}}, "202607": {"real": {}, "fora": {"cxf": 82768, "fat": 2681291.2}}, "202608": {"real": {}, "fora": {"cxf": 32564, "fat": 1444870.0}}}}, {"id": "1204615", "nome": "Canaã Rv  B. Agre", "rota": "R31", "meses": {"202605": {"real": {"cco600": [1120, 57522.72, 37863.6], "ftlar600": [140, 6097.63, 3970.36], "cco350": [9146, 310632.66, 196935.34], "ftlar350": [572, 18740.2, 12361.6], "ccsa2": [4600, 230746.17, 157853.15], "ccsa600": [420, 21572.22, 14675.37], "ccsa350": [4004, 135996.54, 88649.38], "ccsa1": [504, 15848.37, 11158.68], "cco1": [1008, 31692.83, 21186.7], "cco2": [27400, 1380723.49, 934347.03], "sprite350": [585, 9580.58, 6120.5]}, "fora": {"cxf": 0, "fat": 0}}, "202606": {"real": {"cco600": [2100, 110371.03, 73254.84], "ftlar600": [140, 6351.11, 4197.96], "cco350": [3146, 111383.11, 71941.4], "ftlar350": [286, 9749.83, 6521.76], "ftuva350": [286, 9749.83, 6521.76], "ccsa2": [2000, 102850.06, 70901.1], "ccsa600": [980, 51509.27, 35297.51], "ccsa350": [1716, 60756.85, 40214.26], "ccsa1": [504, 16484.83, 11730.55], "cco1": [1848, 60437.21, 41331.81], "cco2": [21000, 1089108.64, 745580.23]}, "fora": {"cxf": 0, "fat": 0}}, "202607": {"real": {"cco600": [2240, 117729.11, 78138.48], "cco350": [8580, 303772.2, 196203.82], "ftlar350": [572, 19499.67, 13043.53], "ccsa2": [5600, 287980.17, 198523.05], "ccsa600": [1120, 58867.75, 40340.0], "ccsa350": [2860, 101261.41, 67023.78], "ccsa1": [1008, 32969.65, 23461.09], "cco1": [840, 27471.44, 18787.18], "cco2": [22700, 1175322.47, 804182.72], "sprite350": [1170, 19933.18, 12934.2]}, "fora": {"cxf": 0, "fat": 0}}, "202608": {"real": {"cco600": [560, 29770.88, 19648.66], "cco350": [1144, 40902.37, 26260.35], "ftlar350": [286, 9881.75, 6575.5], "ccsa2": [4600, 239038.68, 163741.7], "ccsa600": [560, 29772.46, 20284.06], "ccsa350": [2860, 102259.95, 67273.42], "ccsa1": [504, 16660.8, 11774.54], "cco1": [1416, 46826.34, 31814.04], "cco2": [12800, 670423.4, 456018.89]}, "fora": {"cxf": 0, "fat": 0}}, "202609": {"real": {"cco600": [980, 50924.94, 33330.21], "cco350": [4290, 153383.9, 98476.33], "ftlar350": [286, 9881.75, 6575.5], "ftuva350": [286, 9881.75, 6575.49], "ccsa2": [1000, 51964.93, 35596.02], "ccsa600": [560, 29101.55, 19681.24], "ccsa350": [2574, 92033.96, 60546.07], "cco1": [336, 10869.26, 7331.58], "cco2": [18500, 961305.6, 652202.13]}, "fora": {"cxf": 0, "fat": 0}}}}, {"id": "1222852", "nome": "Canaã Rv  B. Mart", "rota": "R31", "meses": {"202605": {"real": {"ftlar2": [200, 8543.53, 5985.51], "cco350": [572, 19427.28, 12339.71], "ftuva350": [286, 9370.1, 6180.8], "ccsa2": [1000, 50162.21, 34315.89], "ccsa350": [286, 9714.04, 6332.1], "sprite2": [100, 4271.84, 2896.66], "cco1": [168, 5282.14, 3566.82], "cco2": [5800, 297273.0, 202751.84]}, "fora": {"cxf": 0, "fat": 0}}, "202606": {"real": {"cco600": [1400, 73580.7, 48836.58], "ftlar600": [140, 6351.11, 4197.96], "cco350": [2860, 101257.39, 65401.28], "ftlar350": [572, 19499.67, 13043.53], "ccsa2": [2800, 143990.08, 99261.51], "ccsa600": [280, 14716.94, 10085.0], "ccsa350": [1144, 40504.56, 26809.56], "ccsa1": [336, 10989.88, 7820.36], "cco1": [1008, 32965.73, 22544.62], "cco2": [11700, 609272.74, 417626.26]}, "fora": {"cxf": 0, "fat": 0}}, "202607": {"real": {"cco600": [140, 7358.07, 4883.66], "cco350": [3146, 111383.12, 71941.4], "ftlar350": [572, 19499.67, 13043.53], "ccsa2": [1900, 97707.56, 67356.05], "ccsa350": [286, 10126.14, 6702.38], "cco1": [168, 5494.29, 3757.44], "cco2": [9500, 496544.61, 340747.89]}, "fora": {"cxf": 0, "fat": 0}}, "202608": {"real": {"cco600": [980, 52099.05, 34385.16], "cco350": [1716, 61353.56, 39390.53], "ccsa2": [1500, 77947.4, 53394.04], "ccsa600": [280, 14886.23, 10142.03], "ccsa350": [858, 30677.98, 20182.02], "ccsa1": [168, 5553.6, 3924.85], "cco1": [504, 16667.01, 11323.65], "cco2": [4000, 209073.82, 142116.42], "sprite350": [585, 10106.21, 6526.28]}, "fora": {"cxf": 0, "fat": 0}}, "202609": {"real": {"cco600": [140, 7274.99, 4761.46], "cco350": [2574, 92030.34, 59085.8], "ccsa2": [3000, 155894.79, 106788.08], "ccsa600": [140, 7275.39, 4920.32], "ccsa350": [858, 30677.97, 20182.02], "ccsa1": [168, 5432.56, 3816.1], "cco1": [672, 21738.52, 14663.16], "cco2": [13300, 699260.54, 476212.05]}, "fora": {"cxf": 0, "fat": 0}}}}, {"id": "1204574", "nome": "Comer. Bom Preco", "rota": "A41", "meses": {"202605": {"real": {"cco600": [1540, 80215.7, 53070.52], "ccsa600": [840, 43756.39, 29900.67], "ccsa1": [672, 21533.7, 15239.92], "cco1": [840, 26920.69, 18292.3]}, "fora": {"cxf": 0, "fat": 0}}, "202607": {"real": {"cco600": [280, 14920.14, 9950.6], "ftlar600": [140, 6351.11, 4197.96], "ftlar350": [286, 10230.84, 6953.66], "ccsa1": [168, 5593.87, 3990.83], "cco1": [840, 27981.45, 19245.4]}, "fora": {"cxf": 0, "fat": 0}}}}, {"id": "1204577", "nome": "Comer. primavera", "rota": "A41", "meses": {"202605": {"real": {"cco600": [980, 51046.36, 33772.16], "ccsa600": [700, 36463.66, 24917.23], "ccsa1": [336, 10766.85, 7619.96], "cco1": [1008, 32304.82, 21950.75]}, "fora": {"cxf": 0, "fat": 0}}, "202607": {"real": {"cco600": [560, 29840.26, 19901.19], "ccsa1": [336, 11187.75, 7981.66], "cco1": [672, 22385.16, 15396.33]}, "fora": {"cxf": 0, "fat": 0}}}}, {"id": "1210851", "nome": "Costa Atac. Madri", "rota": "412", "meses": {"202605": {"real": {"cco600": [1540, 80215.71, 53070.5], "cco350": [5720, 230667.23, 156097.63], "ccsa2": [4500, 231412.64, 159527.49], "ccsa600": [1680, 87512.79, 59801.35], "ccsa350": [6578, 265223.37, 183196.29], "cco2": [11000, 565648.22, 386195.74], "rpcc2": [150, 11826.36, 8112.75]}, "fora": {"cxf": 0, "fat": 0}}, "202606": {"real": {"cco600": [2940, 156661.38, 104481.28], "cco350": [6292, 264328.2, 181226.4], "ccsa2": [5400, 288667.12, 201291.35], "ccsa600": [2940, 156669.68, 107817.12], "ccsa350": [7150, 300325.14, 209943.37], "cco2": [9500, 507893.8, 350945.17], "rpcc2": [150, 12292.64, 8531.68]}, "fora": {"cxf": 0, "fat": 0}}, "202608": {"real": {"cco600": [840, 45261.51, 30016.77], "cco350": [2002, 85030.27, 58041.54], "ccsa2": [6400, 345631.17, 239545.06], "ccsa600": [700, 37714.23, 25803.13], "ccsa350": [1716, 72899.42, 50735.9], "cco2": [10200, 550824.53, 378288.07]}, "fora": {"cxf": 0, "fat": 0}}, "202609": {"real": {"ccsa2": [9200, 496844.8, 344346.04], "cco2": [10500, 567025.25, 389414.18]}, "fora": {"cxf": 0, "fat": 0}}}}, {"id": "1189256", "nome": "Costa Atacadao Centro", "rota": "411", "meses": {"202605": {"real": {"ccsa2": [1, 62.64, 44.69]}, "fora": {"cxf": 155, "fat": 2834.94}}}}, {"id": "1225076", "nome": "Costa Atacadao Trindade", "rota": "421", "meses": {"202608": {"real": {"ftlar2": [100, 3707.93, 2463.86], "ccsa2": [300, 17495.85, 12391.69], "cco2": [400, 23326.82, 16385.52]}, "fora": {"cxf": 240, "fat": 8244.2}}}}, {"id": "1162460", "nome": "Costa Atacado Br153", "rota": "411", "meses": {"202605": {"real": {}, "fora": {"cxf": 155, "fat": 2809.18}}}}, {"id": "1177699", "nome": "Costa Atacado Madri", "rota": "411", "meses": {"202605": {"real": {}, "fora": {"cxf": 156, "fat": 2836.8}}}}, {"id": "1178882", "nome": "Costa Go 070", "rota": "411", "meses": {"202605": {"real": {"ccsa2": [1, 62.64, 44.69]}, "fora": {"cxf": 156, "fat": 2834.83}}}}, {"id": "1204614", "nome": "Dis. Beb. Monteir", "rota": "C31", "meses": {"202605": {"real": {"cco600": [560, 29169.35, 19298.35], "ftlar350": [572, 19633.15, 13163.38], "ccsa2": [1200, 62992.28, 43692.77], "ccsa1": [672, 21533.7, 15239.93], "cco1": [1680, 53841.36, 36584.63], "cco2": [7900, 414743.68, 285000.91], "rpcc2": [50, 3942.12, 2704.25]}, "fora": {"cxf": 0, "fat": 0}}, "202606": {"real": {"cco600": [420, 22380.2, 14925.9], "ccsa2": [1200, 64148.25, 44731.41], "ccsa1": [168, 5593.87, 3990.83], "cco1": [840, 27981.44, 19245.41], "cco2": [10000, 534625.05, 369415.96], "rpcc2": [150, 12292.64, 8531.7]}, "fora": {"cxf": 0, "fat": 0}}, "202607": {"real": {"cco600": [140, 7460.07, 4975.31], "ccsa2": [2500, 133642.19, 93190.44], "ccsa1": [336, 11187.75, 7981.67], "cco1": [672, 22385.16, 15396.34], "cco2": [10600, 566702.55, 391580.93], "rpcc2": [100, 8195.09, 5687.81]}, "fora": {"cxf": 0, "fat": 0}}, "202608": {"real": {"cco600": [420, 22630.75, 15008.37], "ccsa2": [1500, 81007.31, 56143.38], "ccsa1": [672, 22616.93, 16061.07], "cco1": [2184, 73514.3, 50228.72], "cco2": [10200, 550824.53, 378288.06], "rpcc2": [150, 12419.92, 8561.16]}, "fora": {"cxf": 0, "fat": 0}}, "202609": {"real": {"cco600": [560, 30174.34, 20011.18], "ccsa2": [3600, 194417.53, 134744.09], "ccsa600": [140, 7542.85, 5160.63], "ccsa1": [840, 28271.16, 20076.34], "cco1": [2016, 67859.35, 46364.98], "cco2": [12100, 653429.1, 448753.5], "rpcc2": [150, 12419.92, 8561.15]}, "fora": {"cxf": 0, "fat": 0}}}}, {"id": "1220524", "nome": "Gigante Atacarejo", "rota": "M31", "meses": {"202605": {"real": {"ccsa2": [300, 16000.64, 11150.12], "cco2": [1300, 69332.88, 47872.8]}, "fora": {"cxf": 0, "fat": 0}}, "202607": {"real": {"ccsa2": [400, 22176.06, 15623.26], "cco2": [1200, 66525.22, 46459.57]}, "fora": {"cxf": 0, "fat": 0}}, "202608": {"real": {"ccsa2": [300, 16813.44, 11778.55], "cco2": [1300, 72855.05, 50595.95]}, "fora": {"cxf": 0, "fat": 0}}}}, {"id": "1204578", "nome": "Imperio Multim.", "rota": "412", "meses": {"202605": {"real": {"cco600": [2940, 153139.09, 101316.45], "cco350": [35178, 1254953.45, 812960.04], "cco15": [110, 4844.47, 3306.71], "ccsa2": [4900, 251982.65, 173707.66], "ccsa600": [1120, 58341.87, 39867.57], "ccsa15": [110, 4845.52, 3369.92], "ccsa350": [7436, 268294.35, 178767.6], "cco355": [440, 15628.86, 9908.12], "ccsa1": [2184, 69984.53, 49529.77], "cco1": [4032, 129219.27, 87803.05], "cco2": [20800, 1069589.35, 730260.98], "rpcc2": [150, 11826.36, 8112.74]}, "fora": {"cxf": 0, "fat": 0}}, "202606": {"real": {"cco600": [2800, 149201.32, 99505.98], "ccsa2": [2800, 149679.25, 104373.29], "ccsa600": [1260, 67144.16, 46207.36], "ccsa350": [2002, 84091.03, 58784.16], "ccsa1": [336, 11187.75, 7981.67], "cco1": [3192, 106329.48, 73132.55], "cco2": [13400, 716397.57, 495017.4]}, "fora": {"cxf": 0, "fat": 0}}, "202607": {"real": {"cco600": [4650, 247780.77, 165250.99], "cco350": [77574, 2746482.67, 1773928.99], "ccsa2": [4080, 219084.35, 152967.59], "ccsa600": [1820, 96986.01, 66743.94], "ccsa350": [10582, 374667.26, 247988.07], "cco355": [1500, 52029.51, 32653.94], "ccsa1": [1176, 39157.12, 27935.82], "cco1": [3696, 123118.36, 84679.81], "cco2": [17400, 932344.19, 644667.6]}, "fora": {"cxf": 0, "fat": 0}}, "202608": {"real": {"cco600": [10040, 533749.36, 352272.34], "cco15": [110, 5088.38, 3494.73], "ccsa2": [2300, 124211.2, 86086.5], "ccsa600": [1400, 74431.14, 50710.14], "ccsa350": [4576, 194398.45, 135295.76], "ccsa1": [840, 28271.16, 20076.34], "cco1": [2352, 79169.23, 54092.45], "cco2": [10400, 561625.01, 385705.48]}, "fora": {"cxf": 0, "fat": 0}}, "202609": {"real": {"cco15": [110, 5088.38, 3494.73], "ccsa2": [2700, 145813.15, 101058.08], "ccsa600": [840, 45257.08, 30963.76], "ccsa1": [672, 22616.93, 16061.07], "cco1": [2016, 67859.35, 46364.98], "cco2": [5200, 280812.51, 192852.73]}, "fora": {"cxf": 0, "fat": 0}}}}, {"id": "1208731", "nome": "Livre Atacadista", "rota": "412", "meses": {"202605": {"real": {"cco600": [840, 43754.01, 28947.54], "ftlar600": [140, 6097.63, 3970.36], "ftlar350": [110, 3775.61, 2531.42], "cco15": [110, 4844.47, 3306.71], "ftuva350": [44, 1510.24, 1012.57], "ccsa600": [420, 21878.2, 14950.34], "ccsa15": [110, 4845.52, 3369.92], "ccsa1": [504, 16150.28, 11429.95], "cco1": [840, 26920.68, 18292.3]}, "fora": {"cxf": 0, "fat": 0}}}}, {"id": "1204587", "nome": "Marlon Atacarejo", "rota": "412", "meses": {"202605": {"real": {"cco600": [10220, 524894.73, 345505.15], "cco350": [134420, 4586265.0, 2910787.34], "ftlar350": [1716, 56220.59, 37084.81], "ftuva350": [572, 18740.2, 12361.6], "ccsa600": [7000, 359536.69, 244589.91], "ccsa15": [220, 9691.03, 6739.82], "ccsa350": [72358, 2457652.54, 1594797.64], "cco355": [1540, 51372.5, 31687.76], "cco25": [600, 37225.1, 26450.44], "ccsa1": [1848, 58110.7, 40915.17], "cco1": [7056, 221849.86, 149806.33], "cco2": [10000, 514225.65, 351087.02], "rpcc2": [150, 11826.36, 8112.75], "sprite350": [1755, 28741.74, 18361.47]}, "fora": {"cxf": 0, "fat": 0}}, "202606": {"real": {"cco600": [10080, 529780.83, 351622.94], "cco350": [75218, 2663069.26, 1720052.97], "ftlar350": [1716, 58499.01, 39130.58], "ccsa600": [5600, 294338.48, 201700.13], "ccsa15": [220, 10073.94, 7083.86], "ccsa350": [29744, 1053118.77, 697047.53], "cco25": [525, 33864.48, 24159.89], "ccsa1": [1512, 49454.48, 35191.64], "cco2": [10100, 539971.3, 373110.15], "sprite350": [2340, 39866.37, 25868.37]}, "fora": {"cxf": 0, "fat": 0}}, "202607": {"real": {"cco350": [75218, 2663069.25, 1720052.97], "ftlar350": [858, 30692.51, 20860.96], "cco15": [110, 5035.92, 3478.72], "ftuva350": [286, 10230.84, 6953.66], "ccsa15": [330, 15110.9, 10625.78], "ccsa350": [53768, 1903714.68, 1260047.51], "cco355": [1500, 52029.5, 32653.92], "cco25": [225, 14513.35, 10354.23], "cco2": [10000, 534625.05, 369415.99], "rpcc2": [150, 12292.64, 8531.69], "sprite350": [1170, 20912.35, 13813.37]}, "fora": {"cxf": 0, "fat": 0}}, "202608": {"real": {"cco600": [10080, 535875.81, 353675.81], "cco350": [78078, 2791586.74, 1792268.92], "ftlar350": [3718, 128462.71, 85481.42], "cco15": [1210, 55972.14, 38441.96], "ftuva350": [858, 29645.24, 19726.48], "ccsa600": [5180, 275395.22, 187627.53], "ccsa15": [440, 20354.15, 14228.55], "ccsa350": [48906, 1748645.28, 1150375.57], "cco355": [1500, 52566.94, 32457.55], "cco25": [825, 53753.9, 38349.56], "ccsa1": [5712, 188822.38, 133444.7], "cco1": [10248, 338895.77, 230247.3], "cco2": [22000, 1188052.91, 815915.38], "sprite350": [4095, 70743.47, 45683.87]}, "fora": {"cxf": 0, "fat": 0}}, "202609": {"real": {"cco600": [7700, 409349.58, 270169.02], "cco350": [44902, 1605418.0, 1030718.74], "ftlar350": [858, 30984.67, 20929.15], "cco15": [440, 20353.5, 13978.89], "ftuva350": [286, 9881.75, 6575.49], "ccsa600": [7140, 379598.81, 258621.76], "ccsa15": [220, 10177.07, 7114.27], "ccsa350": [33462, 1196441.49, 787099.06], "cco25": [525, 34207.03, 24404.27], "ccsa1": [7224, 239408.59, 169310.86], "cco1": [7224, 240283.63, 163554.29], "cco2": [6900, 372616.59, 255900.73], "sprite350": [1170, 20212.42, 13052.55]}, "fora": {"cxf": 0, "fat": 0}}}}, {"id": "1209203", "nome": "Mer. Sol Nascente", "rota": "412", "meses": {"202605": {"real": {"cco600": [980, 51046.36, 33772.16], "ftlar600": [140, 6098.11, 4129.19], "ftlar350": [572, 19633.15, 13163.39], "ccsa2": [76600, 4007985.84, 2774524.25], "ccsa600": [420, 21878.2, 14950.34], "ccsa1": [504, 16150.28, 11429.95], "cco1": [1008, 32304.82, 21950.75], "cco2": [228600, 11960605.75, 8201349.79]}, "fora": {"cxf": 0, "fat": 0}}, "202606": {"real": {"cco600": [420, 22380.19, 14925.89], "ccsa2": [36100, 1962522.89, 1375077.76], "ccsa600": [140, 7460.47, 5134.15], "ccsa1": [168, 5593.87, 3990.83], "cco1": [504, 16788.86, 11547.25], "cco2": [99000, 5381743.95, 3737145.64]}, "fora": {"cxf": 0, "fat": 0}}, "202607": {"real": {"cco600": [280, 14920.14, 9950.6], "ccsa2": [44200, 2402867.36, 1683613.26], "ccsa1": [168, 5593.87, 3990.83], "cco1": [336, 11192.58, 7698.16], "cco2": [83300, 4528275.46, 3144487.08]}, "fora": {"cxf": 0, "fat": 0}}, "202608": {"real": {"ccsa2": [11100, 609967.03, 424906.94], "cco2": [14500, 796885.42, 550207.27]}, "fora": {"cxf": 0, "fat": 0}}}}, {"id": "1225708", "nome": "Mer. Sol Nascente", "rota": "431", "meses": {"202608": {"real": {"ccsa2": [41500, 2280507.38, 1588616.02], "cco2": [70100, 3852528.81, 2659967.56]}, "fora": {"cxf": 0, "fat": 0}}, "202609": {"real": {"cco600": [1120, 60348.68, 40022.35], "ccsa2": [54300, 2983892.79, 2078598.82], "ccsa600": [560, 30171.39, 20642.51], "ccsa1": [504, 16962.7, 12045.8], "cco1": [840, 28274.74, 19318.73], "cco2": [114100, 6270663.87, 4329562.06]}, "fora": {"cxf": 0, "fat": 0}}}}, {"id": "1204607", "nome": "R. Das Pedras It", "rota": "251", "meses": {"202605": {"real": {"cco600": [1820, 94800.37, 62719.7], "ccsa2": [2600, 133705.08, 92171.44], "ccsa600": [840, 43756.4, 29900.67], "cco2": [12700, 653066.58, 445880.5]}, "fora": {"cxf": 0, "fat": 0}}, "202606": {"real": {"cco600": [700, 37300.32, 24876.49], "ccsa600": [420, 22381.38, 15402.44], "cco2": [2600, 139002.51, 96048.15]}, "fora": {"cxf": 0, "fat": 0}}, "202607": {"real": {"cco600": [1820, 96980.83, 64678.86], "ccsa600": [420, 22381.38, 15402.44], "cco2": [10400, 556010.05, 384192.61]}, "fora": {"cxf": 0, "fat": 0}}, "202608": {"real": {"cco600": [700, 37717.91, 25013.95], "ccsa2": [2600, 140412.66, 97315.18], "ccsa600": [420, 22628.54, 15481.88], "cco2": [10400, 561625.01, 385705.49]}, "fora": {"cxf": 0, "fat": 0}}, "202609": {"real": {"cco600": [700, 37717.91, 25013.95], "ccsa2": [2600, 140412.66, 97315.18], "ccsa600": [420, 22628.54, 15481.88], "cco2": [5200, 280812.51, 192852.75]}, "fora": {"cxf": 0, "fat": 0}}}}, {"id": "1204618", "nome": "R. Das Pedras Pa", "rota": "251", "meses": {"202605": {"real": {"ccsa2": [2600, 133705.08, 92171.44], "cco2": [5200, 267397.34, 182565.24]}, "fora": {"cxf": 0, "fat": 0}}, "202606": {"real": {"cco2": [2600, 139002.51, 96048.15]}, "fora": {"cxf": 0, "fat": 0}}, "202607": {"real": {"cco2": [4900, 261966.27, 181013.82]}, "fora": {"cxf": 0, "fat": 0}}, "202608": {"real": {"cco2": [5200, 280812.51, 192852.75]}, "fora": {"cxf": 0, "fat": 0}}, "202609": {"real": {"ccsa2": [2600, 140412.66, 97315.18]}, "fora": {"cxf": 0, "fat": 0}}}}, {"id": "1127481", "nome": "Ranger Supermercado", "rota": "111", "meses": {"202606": {"real": {}, "fora": {"cxf": 15680, "fat": 534374.4}}}}, {"id": "1204586", "nome": "Show Atacado", "rota": "412", "meses": {"202605": {"real": {"cco600": [1260, 65631.03, 43421.33], "ccsa2": [1000, 51425.03, 35450.55], "ccsa600": [1120, 58341.86, 39867.56], "ccsa15": [1540, 67837.24, 47178.79], "cco25": [825, 51184.5, 36369.38], "ccsa1": [2016, 64601.11, 45719.79], "cco1": [3364, 107810.92, 73256.3], "cco2": [11600, 596501.75, 407260.93], "rpcc2": [150, 11826.36, 8112.74]}, "fora": {"cxf": 0, "fat": 0}}, "202606": {"real": {"cco600": [3640, 193961.68, 129357.74], "ccsa2": [1800, 96222.38, 67097.12], "ccsa600": [3220, 171590.57, 118085.38], "ccsa15": [220, 10073.93, 7083.86], "ccsa1": [1344, 44750.99, 31926.63], "cco1": [2856, 95136.9, 65434.4], "cco2": [10000, 534625.05, 369415.97], "rpcc2": [150, 12292.64, 8531.69]}, "fora": {"cxf": 0, "fat": 0}}, "202607": {"real": {"cco600": [4200, 223801.96, 149258.91], "ccsa2": [1500, 80185.31, 55914.26], "ccsa600": [2240, 119367.36, 82146.35], "ccsa15": [330, 15110.9, 10625.79], "cco25": [300, 19351.13, 13805.63], "ccsa1": [1176, 39157.12, 27935.82], "cco1": [1344, 44770.3, 30792.64], "cco2": [10000, 534625.05, 369415.96]}, "fora": {"cxf": 0, "fat": 0}}, "202608": {"real": {"cco600": [1540, 82979.42, 55030.72], "cco15": [220, 10176.76, 6989.46], "ccsa2": [4100, 221419.97, 153458.56], "ccsa600": [1540, 82971.3, 56766.87], "ccsa15": [110, 5088.54, 3557.14], "cco25": [75, 4886.72, 3486.33], "ccsa1": [672, 22616.95, 16061.07], "cco1": [1344, 45239.56, 30909.96], "cco2": [10000, 540024.05, 370870.66]}, "fora": {"cxf": 0, "fat": 0}}}}, {"id": "1095237", "nome": "Sim Atac Colorado", "rota": "411", "meses": {"202605": {"real": {"cco600": [280, 14380.68, 9465.9], "cco350": [44616, 1515327.55, 962496.75], "ftlar350": [286, 9816.57, 6581.69], "cco15": [220, 9688.95, 6613.42], "ftuva350": [286, 9816.57, 6581.69], "ccsa2": [8400, 418846.64, 285993.02], "ccsa600": [140, 7190.74, 4891.79], "cco25": [150, 9306.27, 6612.61], "ccsa1": [168, 5282.79, 3719.56], "cco1": [504, 15846.42, 10700.46], "cco2": [64400, 3210998.81, 2170597.72], "rpcc2": [300, 23652.73, 16225.51], "sprite350": [585, 10032.5, 6526.27]}, "fora": {"cxf": 0, "fat": 0}}, "202606": {"real": {"cco600": [2940, 154519.41, 102556.69], "cco350": [40040, 1417603.42, 915617.52], "cco15": [440, 20143.67, 13914.89], "ccsa600": [1260, 66226.17, 45382.54], "ccsa350": [32032, 1134127.86, 750666.58], "cco25": [600, 38702.26, 27611.29], "ccsa1": [1176, 38464.59, 27371.27], "cco1": [4536, 148345.9, 101450.84], "cco2": [61600, 3233814.72, 2222163.22]}, "fora": {"cxf": 0, "fat": 0}}, "202607": {"real": {"cco600": [4060, 213383.95, 141625.92], "ftlar350": [1430, 48749.17, 32608.81], "cco15": [440, 20143.67, 13914.89], "ftuva350": [572, 19499.67, 13043.53], "ccsa2": [8400, 431970.25, 297784.63], "ccsa600": [560, 29433.86, 20170.01], "cco25": [375, 24188.91, 17257.05], "ccsa1": [1344, 43959.54, 31281.45], "cco1": [3024, 98897.27, 67633.89], "cco2": [72800, 3762835.31, 2573229.93], "rpcc2": [250, 20487.72, 14219.5], "sprite350": [1170, 19933.18, 12934.18]}, "fora": {"cxf": 0, "fat": 0}}, "202608": {"real": {"cco600": [3920, 208396.15, 137540.59], "cco350": [24024, 858949.75, 551467.33], "cco15": [440, 20353.5, 13978.89], "ccsa2": [4000, 207859.72, 142384.08], "ccsa350": [8008, 286327.89, 188365.58], "cco355": [840, 29437.49, 18176.22], "cco25": [450, 29320.31, 20917.94], "ccsa1": [504, 16660.8, 11774.54], "cco1": [1344, 44445.36, 30196.39], "cco2": [63500, 3311040.19, 2248903.93]}, "fora": {"cxf": 0, "fat": 0}}, "202609": {"real": {"ftlar350": [572, 20656.45, 13952.77], "cco15": [440, 20353.5, 13978.89], "ftuva350": [286, 10328.22, 6976.38], "ccsa600": [280, 14886.23, 10142.03], "cco25": [375, 24433.59, 17431.61], "ccsa1": [504, 16297.69, 11448.28], "cco1": [1680, 54346.32, 36657.93], "sprite350": [585, 10567.54, 6940.49]}, "fora": {"cxf": 0, "fat": 0}}}}, {"id": "1140249", "nome": "Sim Atac Garavelo", "rota": "411", "meses": {"202605": {"real": {"cco600": [420, 21571.02, 14198.85], "cco350": [3718, 126277.3, 80208.07], "cco15": [110, 4844.47, 3306.71], "ftuva350": [286, 9816.57, 6581.69], "ccsa2": [5800, 289203.63, 197471.36], "ccsa600": [140, 7190.74, 4891.79], "cco25": [150, 9306.27, 6612.61], "ccsa1": [168, 5282.79, 3719.56], "cco1": [1176, 36974.97, 24967.75], "cco2": [11200, 558434.58, 377495.26], "rpcc2": [200, 15768.48, 10817.0], "sprite350": [585, 10032.5, 6526.27]}, "fora": {"cxf": 0, "fat": 0}}, "202606": {"real": {"cco600": [3500, 183951.68, 122091.3], "ccsa600": [1260, 66226.17, 45382.53], "ccsa350": [20020, 708829.93, 469166.62], "cco25": [150, 9675.56, 6902.82], "ccsa1": [1176, 38464.59, 27371.27], "cco1": [2520, 82414.38, 56361.57]}, "fora": {"cxf": 0, "fat": 0}}, "202607": {"real": {"cco600": [4200, 220742.02, 146509.57], "ftlar350": [1144, 38999.34, 26087.06], "cco15": [220, 10071.84, 6957.45], "ftuva350": [572, 19499.67, 13043.53], "ccsa2": [14000, 719950.42, 496307.72], "ccsa600": [560, 29433.86, 20170.0], "cco25": [375, 24188.91, 17257.05], "ccsa1": [840, 27474.71, 19550.91], "cco1": [3192, 104391.55, 71391.32], "cco2": [50400, 2614181.95, 1789681.13], "rpcc2": [250, 20487.72, 14219.5], "sprite350": [1170, 19933.18, 12934.18]}, "fora": {"cxf": 0, "fat": 0}}, "202608": {"real": {"cco600": [2240, 119083.51, 78594.62], "cco350": [24024, 858949.75, 551467.33], "ftlar350": [572, 19763.5, 13150.99], "cco15": [440, 20353.5, 13978.89], "ccsa2": [5600, 291003.61, 199337.71], "ccsa600": [280, 14886.23, 10142.03], "cco25": [375, 24433.59, 17431.6], "ccsa1": [168, 5553.6, 3924.85], "cco1": [2352, 77779.36, 52843.63], "cco2": [54400, 2838181.76, 1928091.0]}, "fora": {"cxf": 0, "fat": 0}}, "202609": {"real": {"cco600": [280, 14885.44, 9824.33], "ftlar350": [572, 20656.45, 13952.77], "cco15": [440, 20353.5, 13978.89], "ftuva350": [286, 10328.22, 6976.38], "ccsa2": [2800, 145501.8, 99668.85], "cco25": [375, 24433.59, 17431.61], "ccsa1": [336, 10865.13, 7632.19], "cco1": [1848, 59780.95, 40323.72], "sprite350": [585, 10567.54, 6940.49]}, "fora": {"cxf": 0, "fat": 0}}}}, {"id": "1118466", "nome": "Sim Atac Goiá", "rota": "411", "meses": {"202605": {"real": {"cco350": [32032, 1087927.47, 691023.31], "ftuva350": [286, 9816.57, 6581.69], "ccsa2": [5600, 279231.09, 190662.01], "ccsa600": [420, 21572.21, 14675.4], "cco25": [300, 18612.54, 13225.23], "ccsa1": [336, 10565.58, 7439.12], "cco1": [504, 15846.42, 10700.46], "cco2": [50400, 2568519.67, 1748653.3], "rpcc2": [300, 23652.73, 16225.51], "sprite350": [585, 10032.5, 6526.28]}, "fora": {"cxf": 0, "fat": 0}}, "202606": {"real": {"cco600": [4620, 242816.22, 161160.52], "cco350": [35178, 1245465.86, 804435.39], "ftlar350": [286, 9749.83, 6521.76], "cco15": [440, 20143.68, 13914.9], "ccsa2": [2800, 145146.05, 100300.19], "ccsa600": [1680, 88301.57, 60510.05], "ccsa350": [15730, 556937.79, 368630.91], "cco355": [1540, 53416.97, 33524.71], "cco25": [375, 24188.91, 17257.05], "ccsa1": [1512, 49454.48, 35191.64], "cco1": [3024, 98897.26, 67633.89], "cco2": [56000, 2920488.34, 2002768.37], "rpcc2": [250, 20487.72, 14219.51]}, "fora": {"cxf": 0, "fat": 0}}, "202607": {"real": {"cco600": [3220, 169235.55, 112324.0], "ftlar350": [1430, 48749.17, 32608.81], "ftuva350": [572, 19499.67, 13043.53], "ccsa2": [13200, 678810.4, 467947.27], "ccsa600": [1400, 73584.63, 50425.03], "cco25": [375, 24188.91, 17257.05], "ccsa1": [2352, 76929.2, 54742.54], "cco1": [3024, 98897.27, 67633.9], "cco2": [43400, 2254223.99, 1543920.22], "sprite350": [1170, 19933.18, 12934.18]}, "fora": {"cxf": 0, "fat": 0}}, "202608": {"real": {"cco600": [3920, 208396.15, 137540.59], "cco350": [27170, 971431.27, 623683.3], "cco15": [440, 20353.5, 13978.89], "ccsa2": [2800, 145501.8, 99668.85], "ccsa600": [560, 29772.46, 20284.06], "ccsa350": [8008, 286327.89, 188365.58], "cco355": [660, 23129.45, 14281.32], "cco25": [600, 39093.75, 27890.58], "cco1": [3360, 111113.37, 75490.93], "cco2": [49600, 2619769.02, 1786731.04]}, "fora": {"cxf": 0, "fat": 0}}, "202609": {"real": {"ftlar350": [572, 20656.45, 13952.77], "cco15": [330, 15265.13, 10484.17], "ccsa600": [420, 22329.34, 15213.04], "cco25": [600, 39093.75, 27890.58], "ccsa1": [672, 21730.26, 15264.37], "cco1": [1176, 38042.42, 25660.56], "sprite350": [585, 10567.54, 6940.49]}, "fora": {"cxf": 0, "fat": 0}}}}, {"id": "1205058", "nome": "Super Alternativa", "rota": "412", "meses": {"202605": {"real": {"cco600": [1820, 94800.37, 61850.48], "ccsa2": [5700, 293122.67, 202068.13], "ccsa600": [1260, 65634.58, 44252.43], "cco25": [900, 55837.64, 39477.13], "ccsa1": [1008, 32300.55, 22631.08], "cco1": [1176, 37688.96, 25279.66], "cco2": [19700, 1013024.53, 690692.63], "rpcc2": [150, 11826.36, 8112.74]}, "fora": {"cxf": 0, "fat": 0}}, "202606": {"real": {"cco600": [840, 44760.39, 29851.78], "ccsa2": [1000, 53456.88, 37276.18], "ccsa600": [560, 29841.84, 20536.59], "ccsa1": [1008, 33563.24, 23944.98], "cco1": [1344, 44770.3, 30792.66], "cco2": [9500, 507893.8, 350945.18], "rpcc2": [150, 12292.64, 8531.69]}, "fora": {"cxf": 0, "fat": 0}}, "202607": {"real": {"cco600": [2520, 134281.17, 89555.34], "ccsa600": [1400, 74604.6, 51341.48], "cco25": [150, 9675.56, 6902.82], "ccsa1": [672, 22375.5, 15963.32], "cco1": [1848, 61559.16, 42339.91], "cco2": [12600, 673627.56, 465464.12], "rpcc2": [150, 12292.64, 8531.69]}, "fora": {"cxf": 0, "fat": 0}}, "202608": {"real": {"cco600": [1400, 75435.84, 50027.9], "ccsa600": [980, 52799.92, 36124.37], "cco25": [225, 14660.16, 10458.99], "ccsa1": [1176, 39579.64, 28106.86], "cco1": [2184, 73514.28, 50228.69], "cco2": [10900, 588626.21, 404249.03], "rpcc2": [150, 12419.92, 8561.15]}, "fora": {"cxf": 0, "fat": 0}}}}, {"id": "1224939", "nome": "Super Alternativa", "rota": "112", "meses": {"202607": {"real": {}, "fora": {"cxf": 64048, "fat": 2130479.04}}}}, {"id": "1055206", "nome": "Super Alvorada", "rota": "411", "meses": {"202605": {"real": {"cco600": [17920, 920363.42, 605248.81], "ftlar350": [572, 19633.15, 13163.39], "cco15": [1760, 77511.57, 52708.75], "ftuva350": [286, 9816.57, 6581.69], "ccsa2": [2600, 133705.08, 92171.42], "ccsa600": [7560, 388299.69, 264010.14], "ccsa15": [220, 9691.03, 6739.83], "cco25": [2850, 176819.17, 125441.03], "ccsa1": [10080, 310276.43, 217053.03], "cco1": [26040, 801657.32, 537098.87], "cco2": [10500, 539936.93, 368641.37], "rpcc2": [150, 11826.36, 8112.75], "sprite350": [585, 10032.5, 6526.28]}, "fora": {"cxf": 0, "fat": 0}}, "202606": {"real": {"cco600": [11480, 603361.54, 400459.51], "ftlar350": [572, 20461.67, 13907.31], "cco15": [440, 20143.68, 13914.89], "ccsa2": [3700, 198458.27, 138521.89], "ccsa600": [5600, 294338.5, 201700.14], "cco25": [75, 4837.78, 3451.4], "ccsa1": [6888, 220274.47, 155808.49], "cco1": [15456, 494339.62, 335679.22], "cco2": [10100, 540270.82, 373379.27], "rpcc2": [150, 12292.64, 8531.72]}, "fora": {"cxf": 0, "fat": 0}}, "202607": {"real": {"cco600": [20188, 1061033.34, 704222.69], "cco15": [440, 20143.69, 13914.9], "ccsa2": [7200, 384889.5, 268388.46], "ccsa600": [10108, 531587.03, 364343.65], "ccsa15": [220, 10073.94, 7083.85], "cco25": [150, 9675.56, 6902.8], "ccsa1": [7392, 236392.14, 167209.16], "cco1": [12096, 386874.45, 262705.49], "cco2": [12200, 652242.56, 450687.48]}, "fora": {"cxf": 0, "fat": 0}}, "202608": {"real": {"cco600": [13300, 707058.39, 466655.61], "cco15": [1540, 71237.28, 48926.16], "ccsa2": [5000, 270024.35, 187144.58], "ccsa600": [6300, 334940.13, 228195.64], "ccsa15": [770, 35619.74, 24899.93], "cco25": [1350, 87960.93, 62753.81], "ccsa1": [8400, 271628.18, 190804.63], "cco1": [21840, 706502.05, 476553.12], "cco2": [12300, 664229.58, 456170.9]}, "fora": {"cxf": 0, "fat": 0}}, "202609": {"real": {"cco600": [13860, 736829.3, 486304.29], "cco350": [38610, 1380455.01, 886286.89], "ftlar350": [858, 29645.24, 19726.48], "cco15": [880, 40707.05, 27957.85], "ftuva350": [572, 19763.5, 13150.99], "ccsa2": [5800, 313228.25, 217087.71], "ccsa600": [7980, 424257.5, 289047.81], "ccsa15": [330, 15265.61, 10671.37], "ccsa350": [29744, 1063503.53, 699643.56], "cco25": [1200, 78187.49, 55781.16], "ccsa1": [11256, 363981.74, 255678.2], "cco1": [18480, 597809.42, 403237.25], "cco2": [8900, 480621.4, 330074.89]}, "fora": {"cxf": 0, "fat": 0}}}}, {"id": "1204613", "nome": "Super Freitas", "rota": "C31", "meses": {"202605": {"real": {"cco600": [420, 21877.01, 14473.76], "ccsa2": [700, 36745.5, 25487.44], "ccsa1": [336, 10766.85, 7619.97], "cco1": [1008, 32304.81, 21950.78], "cco2": [6400, 335994.88, 230886.82]}, "fora": {"cxf": 0, "fat": 0}}, "202607": {"real": {"cco600": [280, 14920.14, 9950.62], "ccsa2": [800, 43678.62, 30641.37], "ccsa1": [336, 11187.75, 7981.67], "cco1": [504, 16788.85, 11547.25], "cco2": [5400, 294817.35, 204983.31], "rpcc2": [50, 4097.55, 2843.91]}, "fora": {"cxf": 0, "fat": 0}}, "202608": {"real": {"cco600": [420, 22630.75, 15008.38], "ccsa2": [1000, 55202.93, 38505.37], "ccsa1": [336, 11308.47, 8030.53], "cco1": [840, 28274.74, 19318.75], "cco2": [5000, 276002.33, 190817.65]}, "fora": {"cxf": 0, "fat": 0}}, "202609": {"real": {"cco600": [140, 7543.58, 5002.79], "ccsa2": [900, 49682.64, 34654.83], "ccsa1": [336, 11308.46, 8030.54], "cco1": [504, 16964.84, 11591.24], "cco2": [4000, 220801.86, 152654.14]}, "fora": {"cxf": 0, "fat": 0}}}}, {"id": "1222502", "nome": "Super Livre", "rota": "214", "meses": {"202606": {"real": {}, "fora": {"cxf": 4200, "fat": 143136.0}}}}, {"id": "1089324", "nome": "Supermerado Calvalcante Cristina Ii", "rota": "131", "meses": {"202608": {"real": {"rpcc2": [3, 220.32, 145.99]}, "fora": {"cxf": 660, "fat": 18317.19}}}}], "parcial": {"202609": "parcial até 23/09"}, "redes": [{"id": "KA1171", "nome": "REDE COSTA MULTICANAL", "rede": true, "codka": "1171", "npv": 6, "pvs": ["Costa Atac. Madri (1210851)", "Costa Atacadao Centro (1189256)", "Costa Atacadao Trindade (1225076)", "Costa Atacado Br153 (1162460)", "Costa Atacado Madri (1177699)", "Costa Go 070 (1178882)"], "meses": {"202605": {"real": {"cco600": [1540, 80215.71, 53070.5], "cco350": [5720, 230667.23, 156097.63], "ccsa2": [4502, 231537.92, 159616.87], "ccsa600": [1680, 87512.79, 59801.35], "ccsa350": [6578, 265223.37, 183196.29], "cco2": [11000, 565648.22, 386195.74], "rpcc2": [150, 11826.36, 8112.75]}, "fora": {"cxf": 622, "fat": 11315.75}, "lojas": ["Costa Atac. Madri (1210851)", "Costa Atacadao Centro (1189256)", "Costa Atacado Br153 (1162460)", "Costa Atacado Madri (1177699)", "Costa Go 070 (1178882)"]}, "202606": {"real": {"cco600": [2940, 156661.38, 104481.28], "cco350": [6292, 264328.2, 181226.4], "ccsa2": [5400, 288667.12, 201291.35], "ccsa600": [2940, 156669.68, 107817.12], "ccsa350": [7150, 300325.14, 209943.37], "cco2": [9500, 507893.8, 350945.17], "rpcc2": [150, 12292.64, 8531.68]}, "fora": {"cxf": 0, "fat": 0}, "lojas": ["Costa Atac. Madri (1210851)"]}, "202608": {"real": {"cco600": [840, 45261.51, 30016.77], "cco350": [2002, 85030.27, 58041.54], "ccsa2": [6700, 363127.02, 251936.75], "ccsa600": [700, 37714.23, 25803.13], "ccsa350": [1716, 72899.42, 50735.9], "cco2": [10600, 574151.35, 394673.59], "ftlar2": [100, 3707.93, 2463.86]}, "fora": {"cxf": 240, "fat": 8244.2}, "lojas": ["Costa Atac. Madri (1210851)", "Costa Atacadao Trindade (1225076)"]}, "202609": {"real": {"ccsa2": [9200, 496844.8, 344346.04], "cco2": [10500, 567025.25, 389414.18]}, "fora": {"cxf": 0, "fat": 0}, "lojas": ["Costa Atac. Madri (1210851)"]}}}, {"id": "KA1183", "nome": "REDE DIST CANAA", "rede": true, "codka": "1183", "npv": 6, "pvs": ["Canaa Campinas (1178210)", "Canaa Campinas (1204593)", "Canaa Garavelo (1216240)", "Canaa Itumbiara (1208748)", "Canaa Trindade (1192470)", "Canaa Uruaçu (1221891)"], "meses": {"202606": {"real": {"cco600": [11080, 582338.5, 386506.26], "cco350": [74932, 2652943.5, 1713512.88], "ccsa2": [21600, 1110780.65, 765731.93], "ccsa600": [2010, 105646.51, 72395.92], "ccsa350": [50050, 1772074.81, 1172916.65], "cco355": [1100, 38154.99, 23946.2], "cco25": [1625, 104818.62, 74780.56], "cco1": [8330, 272425.29, 186306.3], "cco2": [147600, 7617273.41, 5206575.86], "rpcc2": [850, 69658.26, 48346.3], "ftlar350": [1144, 38999.33, 26087.05], "cco15": [440, 20143.68, 13914.89], "ccsa15": [220, 10073.94, 7083.85], "ccsa1": [2184, 71434.24, 50832.36], "sprite350": [2340, 39866.37, 25868.38], "ftlar600": [40, 1814.6, 1199.42], "ftlar1": [70, 1864.84, 1318.07], "sprite600": [30, 1361.0, 841.91], "ftlar2": [100, 4439.95, 3143.78], "sprite2": [100, 4440.02, 3047.67]}, "fora": {"cxf": 86884, "fat": 2853005.38}, "lojas": ["Canaa Campinas (1178210)", "Canaa Campinas (1204593)", "Canaa Garavelo (1216240)", "Canaa Itumbiara (1208748)", "Canaa Trindade (1192470)", "Canaa Uruaçu (1221891)"]}, "202605": {"real": {"cco600": [10220, 524894.71, 345505.12], "cco350": [76076, 2583827.83, 1641180.32], "ftlar350": [1716, 56220.59, 37084.79], "ftuva350": [286, 9370.1, 6180.79], "ccsa2": [20600, 1035880.12, 709188.51], "ccsa600": [5950, 305606.18, 207901.42], "ccsa15": [1760, 77528.26, 53918.59], "ccsa350": [31350, 1067419.92, 696442.71], "cco355": [1540, 51372.5, 31687.75], "cco25": [1125, 69797.02, 49594.59], "ccsa1": [4116, 129428.35, 91129.19], "cco1": [7728, 242978.4, 164073.62], "cco2": [54900, 2806445.78, 1912504.81], "rpcc2": [750, 59131.82, 40563.76], "sprite350": [1170, 19161.16, 12240.99], "ftlar1": [168, 4313.37, 3017.67]}, "fora": {"cxf": 0, "fat": 0}, "lojas": ["Canaa Campinas (1204593)", "Canaa Itumbiara (1208748)"]}, "202607": {"real": {"cco600": [17836, 937417.75, 622177.27], "cco350": [76076, 2693446.46, 1739673.34], "ftlar350": [1430, 48749.16, 32608.8], "cco15": [3080, 141005.73, 97404.25], "ftuva350": [572, 19499.67, 13043.53], "ccsa2": [30700, 1578748.42, 1088331.93], "ccsa600": [5530, 290659.27, 199178.87], "ccsa15": [1870, 85628.38, 60212.77], "ccsa350": [7436, 263279.68, 174261.9], "cco355": [1500, 55245.83, 35543.79], "cco25": [1875, 120944.55, 86285.25], "ccsa1": [3444, 112646.33, 80158.71], "cco1": [19992, 653820.81, 447135.16], "cco2": [184300, 9546238.8, 6532584.28], "rpcc2": [500, 40975.45, 28439.0], "sprite350": [1755, 29899.77, 19401.26]}, "fora": {"cxf": 82768, "fat": 2681291.2}, "lojas": ["Canaa Campinas (1204593)", "Canaa Garavelo (1216240)", "Canaa Itumbiara (1208748)", "Canaa Trindade (1192470)", "Canaa Uruaçu (1221891)"]}, "202608": {"real": {"cco600": [13440, 715106.31, 472111.52], "cco350": [92950, 3323317.56, 2133653.47], "ftlar350": [1144, 39527.0, 26301.99], "cco15": [3960, 183181.55, 125810.07], "ccsa2": [26000, 1351088.19, 925496.57], "ccsa15": [6160, 284957.76, 199199.28], "ccsa350": [35464, 1268023.42, 834190.39], "cco355": [1500, 52566.95, 32457.57], "cco25": [1350, 87960.93, 62753.81], "cco1": [16464, 544455.57, 369905.54], "cco2": [179100, 9365227.76, 6366809.09], "ccsa600": [1050, 55823.36, 38032.61], "ccsa1": [1596, 52759.18, 37286.05], "rpcc2": [200, 16559.91, 11414.91], "sprite350": [1170, 20212.41, 13052.52]}, "fora": {"cxf": 32564, "fat": 1444870.0}, "lojas": ["Canaa Campinas (1204593)", "Canaa Garavelo (1216240)", "Canaa Itumbiara (1208748)", "Canaa Trindade (1192470)", "Canaa Uruaçu (1221891)"]}, "202609": {"real": {"cco600": [3920, 203699.75, 133320.84], "cco350": [40326, 1441808.54, 925677.34], "ftlar350": [1430, 49408.73, 32877.45], "cco15": [1320, 61060.54, 41936.73], "ftuva350": [572, 19763.5, 13150.98], "ccsa2": [18700, 971744.19, 665645.6], "ccsa600": [2240, 116406.2, 78724.98], "ccsa15": [2310, 106859.17, 74699.76], "ccsa350": [12584, 449943.8, 296003.05], "cco355": [760, 26633.91, 16445.17], "ccsa1": [3864, 124948.95, 87770.15], "cco1": [11760, 380424.2, 256605.57], "cco2": [134500, 7015470.77, 4765513.4], "cco25": [75, 4886.72, 3486.32]}, "fora": {"cxf": 0, "fat": 0}, "lojas": ["Canaa Campinas (1204593)", "Canaa Garavelo (1216240)", "Canaa Itumbiara (1208748)", "Canaa Trindade (1192470)"]}}}, {"id": "KA1162", "nome": "REDE SIM ATACADO", "rede": true, "codka": "1162", "npv": 3, "pvs": ["Sim Atac Colorado (1095237)", "Sim Atac Garavelo (1140249)", "Sim Atac Goiá (1118466)"], "meses": {"202605": {"real": {"cco600": [700, 35951.7, 23664.75], "cco350": [80366, 2729532.32, 1733728.13], "ftlar350": [286, 9816.57, 6581.69], "cco15": [330, 14533.42, 9920.13], "ftuva350": [858, 29449.71, 19745.07], "ccsa2": [19800, 987281.36, 674126.39], "ccsa600": [700, 35953.69, 24458.98], "cco25": [600, 37225.08, 26450.45], "ccsa1": [672, 21131.16, 14878.24], "cco1": [2184, 68667.81, 46368.67], "cco2": [126000, 6337953.06, 4296746.28], "rpcc2": [800, 63073.94, 43268.02], "sprite350": [1755, 30097.5, 19578.82]}, "fora": {"cxf": 0, "fat": 0}, "lojas": ["Sim Atac Colorado (1095237)", "Sim Atac Garavelo (1140249)", "Sim Atac Goiá (1118466)"]}, "202606": {"real": {"cco600": [11060, 581287.31, 385808.51], "cco350": [75218, 2663069.28, 1720052.91], "cco15": [880, 40287.35, 27829.79], "ccsa600": [4200, 220753.91, 151275.12], "ccsa350": [67782, 2399895.58, 1588464.11], "cco25": [1125, 72566.73, 51771.16], "ccsa1": [3864, 126383.66, 89934.18], "cco1": [10080, 329657.54, 225446.3], "cco2": [117600, 6154303.06, 4224931.59], "ftlar350": [286, 9749.83, 6521.76], "ccsa2": [2800, 145146.05, 100300.19], "cco355": [1540, 53416.97, 33524.71], "rpcc2": [250, 20487.72, 14219.51]}, "fora": {"cxf": 0, "fat": 0}, "lojas": ["Sim Atac Colorado (1095237)", "Sim Atac Garavelo (1140249)", "Sim Atac Goiá (1118466)"]}, "202607": {"real": {"cco600": [11480, 603361.52, 400459.49], "ftlar350": [4004, 136497.68, 91304.68], "cco15": [660, 30215.51, 20872.34], "ftuva350": [1716, 58499.01, 39130.59], "ccsa2": [35600, 1830731.07, 1262039.62], "ccsa600": [2520, 132452.35, 90765.04], "cco25": [1125, 72566.73, 51771.15], "ccsa1": [4536, 148363.45, 105574.9], "cco1": [9240, 302186.09, 206659.11], "cco2": [166600, 8631241.25, 5906831.28], "rpcc2": [500, 40975.44, 28439.0], "sprite350": [3510, 59799.54, 38802.54]}, "fora": {"cxf": 0, "fat": 0}, "lojas": ["Sim Atac Colorado (1095237)", "Sim Atac Garavelo (1140249)", "Sim Atac Goiá (1118466)"]}, "202608": {"real": {"cco600": [10080, 535875.81, 353675.8], "cco350": [75218, 2689330.77, 1726617.96], "cco15": [1320, 61060.5, 41936.67], "ccsa2": [12400, 644365.13, 441390.64], "ccsa350": [16016, 572655.78, 376731.16], "cco355": [1500, 52566.94, 32457.54], "cco25": [1425, 92847.65, 66240.12], "ccsa1": [672, 22214.4, 15699.39], "cco1": [7056, 233338.09, 158530.95], "cco2": [167500, 8768990.97, 5963725.97], "ftlar350": [572, 19763.5, 13150.99], "ccsa600": [840, 44658.69, 30426.09]}, "fora": {"cxf": 0, "fat": 0}, "lojas": ["Sim Atac Colorado (1095237)", "Sim Atac Garavelo (1140249)", "Sim Atac Goiá (1118466)"]}, "202609": {"real": {"ftlar350": [1716, 61969.35, 41858.31], "cco15": [1210, 55972.13, 38441.95], "ftuva350": [572, 20656.44, 13952.76], "ccsa600": [700, 37215.57, 25355.07], "cco25": [1350, 87960.93, 62753.8], "ccsa1": [1512, 48893.08, 34344.84], "cco1": [4704, 152169.69, 102642.21], "sprite350": [1755, 31702.62, 20821.47], "cco600": [280, 14885.44, 9824.33], "ccsa2": [2800, 145501.8, 99668.85]}, "fora": {"cxf": 0, "fat": 0}, "lojas": ["Sim Atac Colorado (1095237)", "Sim Atac Garavelo (1140249)", "Sim Atac Goiá (1118466)"]}}}, {"id": "KA1062", "nome": "REDE SUPER CANAA RIO VERD", "rede": true, "codka": "1062", "npv": 2, "pvs": ["Canaã Rv  B. Agre (1204615)", "Canaã Rv  B. Mart (1222852)"], "meses": {"202605": {"real": {"cco600": [1120, 57522.72, 37863.6], "ftlar600": [140, 6097.63, 3970.36], "cco350": [9718, 330059.94, 209275.05], "ftlar350": [572, 18740.2, 12361.6], "ccsa2": [5600, 280908.38, 192169.04], "ccsa600": [420, 21572.22, 14675.37], "ccsa350": [4290, 145710.58, 94981.48], "ccsa1": [504, 15848.37, 11158.68], "cco1": [1176, 36974.97, 24753.52], "cco2": [33200, 1677996.49, 1137098.87], "sprite350": [585, 9580.58, 6120.5], "ftlar2": [200, 8543.53, 5985.51], "ftuva350": [286, 9370.1, 6180.8], "sprite2": [100, 4271.84, 2896.66]}, "fora": {"cxf": 0, "fat": 0}, "lojas": ["Canaã Rv  B. Agre (1204615)", "Canaã Rv  B. Mart (1222852)"]}, "202606": {"real": {"cco600": [3500, 183951.73, 122091.42], "ftlar600": [280, 12702.22, 8395.92], "cco350": [6006, 212640.5, 137342.68], "ftlar350": [858, 29249.5, 19565.29], "ftuva350": [286, 9749.83, 6521.76], "ccsa2": [4800, 246840.14, 170162.61], "ccsa600": [1260, 66226.21, 45382.51], "ccsa350": [2860, 101261.41, 67023.82], "ccsa1": [840, 27474.71, 19550.91], "cco1": [2856, 93402.94, 63876.43], "cco2": [32700, 1698381.38, 1163206.49]}, "fora": {"cxf": 0, "fat": 0}, "lojas": ["Canaã Rv  B. Agre (1204615)", "Canaã Rv  B. Mart (1222852)"]}, "202607": {"real": {"cco600": [2380, 125087.18, 83022.14], "cco350": [11726, 415155.32, 268145.22], "ftlar350": [1144, 38999.34, 26087.06], "ccsa2": [7500, 385687.73, 265879.1], "ccsa600": [1120, 58867.75, 40340.0], "ccsa350": [3146, 111387.55, 73726.16], "ccsa1": [1008, 32969.65, 23461.09], "cco1": [1008, 32965.73, 22544.62], "cco2": [32200, 1671867.08, 1144930.61], "sprite350": [1170, 19933.18, 12934.2]}, "fora": {"cxf": 0, "fat": 0}, "lojas": ["Canaã Rv  B. Agre (1204615)", "Canaã Rv  B. Mart (1222852)"]}, "202608": {"real": {"cco600": [1540, 81869.93, 54033.82], "cco350": [2860, 102255.93, 65650.88], "ftlar350": [286, 9881.75, 6575.5], "ccsa2": [6100, 316986.08, 217135.74], "ccsa600": [840, 44658.69, 30426.09], "ccsa350": [3718, 132937.93, 87455.44], "ccsa1": [672, 22214.4, 15699.39], "cco1": [1920, 63493.35, 43137.69], "cco2": [16800, 879497.22, 598135.31], "sprite350": [585, 10106.21, 6526.28]}, "fora": {"cxf": 0, "fat": 0}, "lojas": ["Canaã Rv  B. Agre (1204615)", "Canaã Rv  B. Mart (1222852)"]}, "202609": {"real": {"cco600": [1120, 58199.93, 38091.67], "cco350": [6864, 245414.24, 157562.13], "ftlar350": [286, 9881.75, 6575.5], "ftuva350": [286, 9881.75, 6575.49], "ccsa2": [4000, 207859.72, 142384.1], "ccsa600": [700, 36376.94, 24601.56], "ccsa350": [3432, 122711.93, 80728.09], "cco1": [1008, 32607.78, 21994.74], "cco2": [31800, 1660566.14, 1128414.18], "ccsa1": [168, 5432.56, 3816.1]}, "fora": {"cxf": 0, "fat": 0}, "lojas": ["Canaã Rv  B. Agre (1204615)", "Canaã Rv  B. Mart (1222852)"]}}}, {"id": "KA1008", "nome": "REDE SUPER CAVALCANT", "rede": true, "codka": "1008", "npv": 2, "pvs": ["Atacadão Centro Oeste (1211448)", "Supermerado Calvalcante Cristina Ii (1089324)"], "meses": {"202608": {"real": {"rpcc2": [7, 589.93, 408.8]}, "fora": {"cxf": 1316, "fat": 36820.43}, "lojas": ["Atacadão Centro Oeste (1211448)", "Supermerado Calvalcante Cristina Ii (1089324)"]}}}, {"id": "KA1133", "nome": "REDE SUPER RIO DAS PEDRAS", "rede": true, "codka": "1133", "npv": 2, "pvs": ["R. Das Pedras It (1204607)", "R. Das Pedras Pa (1204618)"], "meses": {"202605": {"real": {"cco600": [1820, 94800.37, 62719.7], "ccsa2": [5200, 267410.16, 184342.88], "ccsa600": [840, 43756.4, 29900.67], "cco2": [17900, 920463.92, 628445.74]}, "fora": {"cxf": 0, "fat": 0}, "lojas": ["R. Das Pedras It (1204607)", "R. Das Pedras Pa (1204618)"]}, "202606": {"real": {"cco600": [700, 37300.32, 24876.49], "ccsa600": [420, 22381.38, 15402.44], "cco2": [5200, 278005.02, 192096.3]}, "fora": {"cxf": 0, "fat": 0}, "lojas": ["R. Das Pedras It (1204607)", "R. Das Pedras Pa (1204618)"]}, "202607": {"real": {"cco600": [1820, 96980.83, 64678.86], "ccsa600": [420, 22381.38, 15402.44], "cco2": [15300, 817976.32, 565206.43]}, "fora": {"cxf": 0, "fat": 0}, "lojas": ["R. Das Pedras It (1204607)", "R. Das Pedras Pa (1204618)"]}, "202608": {"real": {"cco600": [700, 37717.91, 25013.95], "ccsa2": [2600, 140412.66, 97315.18], "ccsa600": [420, 22628.54, 15481.88], "cco2": [15600, 842437.52, 578558.24]}, "fora": {"cxf": 0, "fat": 0}, "lojas": ["R. Das Pedras It (1204607)", "R. Das Pedras Pa (1204618)"]}, "202609": {"real": {"cco600": [700, 37717.91, 25013.95], "ccsa2": [5200, 280825.32, 194630.36], "ccsa600": [420, 22628.54, 15481.88], "cco2": [5200, 280812.51, 192852.75]}, "fora": {"cxf": 0, "fat": 0}, "lojas": ["R. Das Pedras It (1204607)", "R. Das Pedras Pa (1204618)"]}}}]};
+const P = D.prods;
+const FAIXAS=[
+  {n:1,min:22000,r:{cc2l:.0025,cc600lata:.0025,demais:.0025}},
+  {n:2,min:25000,r:{cc2l:.005,cc600lata:.005,demais:.005}},
+  {n:3,min:30000,r:{cc2l:.005,cc600lata:.01,demais:.02}},
+  {n:4,min:35000,r:{cc2l:.01,cc600lata:.02,demais:.03}},
+  {n:5,min:75000,r:{cc2l:.02,cc600lata:.03,demais:.05}},
+];
+const CORES=['var(--f1)','var(--f2)','var(--f3)','var(--f4)','var(--f5)'];
+const GRP={cc2l:'Coca-Cola 2L',cc600lata:'600ml e lata',demais:'Demais'};
+let RP_SUSP=true;
+const LATAS=['cco350','ccsa350','ftlar350','ftuva350','sprite350'];
+const TABS=[
+ {id:'auto',nome:'Automática (melhor elegível)'},
+ {id:'n17',nome:'N-17',req:(v)=>v.cc>=16000,reqTxt:'16.000 cx de Coca-Cola Original 2L'},
+ {id:'n23_5',nome:'N-23 5 mil sem RefPet',p:9.26,req:v=>v.cc>=5000,reqTxt:'5.000 cx de Coca-Cola Original 2L'},
+ {id:'n23_5rp50',nome:'N-23 5 mil + 50 cx RefPet 2L',p:9.20,req:v=>v.cc>=5000&&v.rp2r>=50,reqTxt:'5.000 cx de Original 2L e 50 cx de RefPet 2L'},
+ {id:'n23_5rp100',nome:'N-23 5 mil + 100 cx RefPet 2L',p:9.12,req:v=>v.cc>=5000&&v.rp2r>=100,reqTxt:'5.000 cx de Original 2L e 100 cx de RefPet 2L'},
+ {id:'n23_10',nome:'N-23 10 mil sem RefPet',p:9.15,req:v=>v.cc>=10000,reqTxt:'10.000 cx de Coca-Cola Original 2L'},
+ {id:'n23_10rp50',nome:'N-23 10 mil + 50 cx RefPet 1L ou 2L',p:9.08,req:v=>v.cc>=10000&&(v.rp2r>=50||v.rp1r>=50),reqTxt:'10.000 cx de Original 2L e 50 cx de RefPet 1L ou 2L'},
+ {id:'n23_10rp150',nome:'N-23 10 mil + 150 cx RefPet 2L',p:9.00,req:v=>v.cc>=10000&&v.rp2r>=150,reqTxt:'10.000 cx de Original 2L e 150 cx de RefPet 2L'},
+ {id:'n22_50',nome:'N-22 50 mil',p:8.78,n22:50000,req:v=>v.cc>=66000&&v.rp2r>=750,reqTxt:'66.000 cx de Original 2L (16 mil N-17 + 50 mil) e 750 cx de RefPet 2L'},
+ {id:'n22_100',nome:'N-22 100 mil',p:8.73,n22:100000,req:v=>v.cc>=116000&&v.rp2r>=750,reqTxt:'116.000 cx de Original 2L (16 mil N-17 + 100 mil) e 750 cx de RefPet 2L'},
+ {id:'n22_150',nome:'N-22 150 mil',p:8.66,n22:150000,req:v=>v.cc>=166000&&v.rp2r>=750,reqTxt:'166.000 cx de Original 2L (16 mil N-17 + 150 mil) e 750 cx de RefPet 2L'},
+];
+const brl=v=>v.toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});
+const brl2=v=>v.toLocaleString('pt-BR',{style:'currency',currency:'BRL',minimumFractionDigits:2,maximumFractionDigits:2});
+const num=(v,d=0)=>v.toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});
+const pct=(v,d=2)=>(v*100).toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d})+'%';
+
+let q={}; P.forEach(p=>q[p.id]=0);
+const EXEMPLO={cco2:10000,ccsa2:1000,ftlar2:500,rpcc2:100,cco600:600,cco350:1500,ftlar350:200};
+
+function volumes(Q){
+  const lata=LATAS.reduce((s,k)=>s+Q[k]*(P.find(p=>p.id===k).mult/12),0);
+  const rp2=Q.rpcc2+Q.rpft2, rp1=Q.rpcc1+Q.rpft1;
+  return {cc:Q.cco2, rp2, rp1, rp2r:RP_SUSP?Infinity:rp2, rp1r:RP_SUSP?Infinity:rp1, lata, turbo:lata>=9000};
+}
+function precoCC(t,v){
+  const n17=v.turbo?9.28:9.34;
+  if(t.id==='n17') return {media:n17,marg:n17};
+  if(t.n22){ const extra=Math.max(0,v.cc-16000); const tot=v.cc||1;
+    return {media:v.cc?((Math.min(v.cc,16000)*n17+extra*t.p)/tot):t.p, marg:t.p}; }
+  return {media:t.p,marg:t.p};
+}
+function calc(Q,tabId,ult3,escadas){
+  const v=volumes(Q);
+  let elegiveis=TABS.filter(t=>t.req&&t.req(v));
+  let t;
+  if(tabId==='auto'){
+    t=elegiveis.slice().sort((a,b)=>precoCC(a,v).media-precoCC(b,v).media)[0]||TABS.find(x=>x.id==='n17');
+  } else t=TABS.find(x=>x.id===tabId);
+  const ok=!!(t.req&&t.req(v));
+  const pc=precoCC(t,v); const add=0.10*ult3;
+  const L={};
+  const lataCoca=v.lata;
+  P.forEach(p=>{
+    let un = v.turbo? p.tl : p.nt, base=un, obs='';
+    if(p.id==='cco2'){un=pc.media+add;}
+    else if(p.id==='ccsa2'){un=pc.marg+add;}
+    else if(escadas){
+      if(p.id==='cco350'||p.id==='ccsa350'){
+        const d=degrauLata(v,Q); if(d) un=d.p;
+      }
+      if(p.id==='cco600'||p.id==='ccsa600'){const x=Q.cco600+Q.ccsa600; if(x>=20000)un=4.33; else if(x>=10000)un=4.43;}
+      if(p.id==='cco1'||p.id==='ccsa1'){const x=Q.cco1+Q.ccsa1; if(x>=12000)un=5.39; else if(x>=7000)un=5.51;}
+    }
+    const cx=un*p.mult, fat=Q[p.id]*cx, rl=fat*p.rl, cxu=Q[p.id]*p.cxu;
+    L[p.id]={un,cx,fat,rl,cxu,mudou:Math.abs(un-p.nt)>0.001};
+  });
+  const tot={fat:0,rl:0,cxu:0,cxf:0,rlg:{cc2l:0,cc600lata:0,demais:0}};
+  P.forEach(p=>{const l=L[p.id];tot.fat+=l.fat;tot.rl+=l.rl;tot.cxu+=l.cxu;tot.cxf+=Q[p.id];tot.rlg[p.grp]+=l.rl;});
+  let fx=0; FAIXAS.forEach((f,i)=>{if(tot.cxu>=f.min)fx=i+1;});
+  const reb= rebate(tot.rlg,fx);
+  return {v,t,ok,elegiveis,pc,L,tot,fx,reb};
+}
+const DEGRAUS=[
+ {p:2.92,lata:75000,rp:750,s355:.02},{p:2.98,lata:75000,rp:750,s355:0},{p:3.06,lata:50000,rp:750,s355:.02},
+ {p:3.12,lata:35000,rp:750,s355:.01},{p:3.15,lata:35000,rp:500,s355:.01}];
+function share355(Q){let tot=0;P.forEach(p=>tot+=Q[p.id]*p.cxu);return tot?Q.cco355*P.find(p=>p.id==='cco355').cxu/tot:0;}
+function degrauLata(v,Q){ if(v.cc<16000) return null; const s=share355(Q);
+  return DEGRAUS.find(d=>v.lata>=d.lata&&v.rp2r>=d.rp&&s>=d.s355-1e-9)||null; }
+function posRegua(c){const b=[0,22000,25000,30000,35000,75000,115000];const W=100/6;
+  for(let i=0;i<6;i++){if(c<b[i+1])return W*i+W*(c-b[i])/(b[i+1]-b[i]);} return 99.5;}
+function rebate(rlg,fx){ if(!fx) return 0; const r=FAIXAS[fx-1].r; return rlg.cc2l*r.cc2l+rlg.cc600lata*r.cc600lata+rlg.demais*r.demais; }
+
+/* ---------- UI ---------- */
+const $=id=>document.getElementById(id);
+function montaControles(){
+  const sc=$('cliente');
+  sc.innerHTML='<option value="">Pedido em branco</option><option value="ex">Exemplo</option>'+
+    `<optgroup label="Redes (consolidado pelo Key Account)">`+D.redes.map(r=>`<option value="${r.id}">${r.nome} (${r.npv} PVs, KA ${r.codka})</option>`).join('')+`</optgroup>`+
+    `<optgroup label="Lojas">`+D.clientes.map(c=>`<option value="${c.id}">${c.nome} (${c.id}, rota ${c.rota})</option>`).join('')+`</optgroup>`;
+  $('tabela').innerHTML=TABS.map(t=>`<option value="${t.id}">${t.nome}${t.p?' · R$ '+num(t.p,2):''}</option>`).join('');
+  const tb=$('tab').querySelector('tbody'); let fam=''; let h='';
+  P.forEach(p=>{
+    if(p.fam!==fam){fam=p.fam;h+=`<tr class="fam"><td colspan="8">${fam}</td></tr>`;}
+    h+=`<tr id="r_${p.id}"><td>${p.nome}<br><span class="nota">cód. ${p.cod} · cx ${p.mult} · ${num(p.cxu,2)} cxu · pallet ${p.pal} cx</span></td>
+      <td><input type="number" min="0" step="1" data-pal="${p.id}" aria-label="Pallets de ${p.nome}" title="${p.pal} cx por pallet"></td>
+      <td><input type="number" min="0" step="10" data-id="${p.id}" aria-label="Caixas de ${p.nome}"></td>
+      <td class="preco"></td><td class="pcx"></td><td class="fat"></td><td class="cxu"></td>
+      <td><span class="tag ${p.grp}">${GRP[p.grp]}</span></td></tr>`;
+  });
+    h+=`<tr class="total"><td>Total</td><td id="tPal"></td><td id="tCxf"></td><td></td><td></td><td id="tFat"></td><td id="tCxu"></td><td></td></tr>`;
+  tb.innerHTML=h;
+  tb.addEventListener('input',e=>{
+    const id=e.target.dataset.id, pid=e.target.dataset.pal;
+    if(id){ q[id]=Math.max(0,+e.target.value||0); const pi=tb.querySelector(`input[data-pal="${id}"]`); const pr=P.find(x=>x.id===id); pi.value=q[id]?+(q[id]/pr.pal).toFixed(1):''; render(); }
+    else if(pid){ const pr=P.find(x=>x.id===pid); const n=Math.max(0,+e.target.value||0); q[pid]=Math.round(n*pr.pal); tb.querySelector(`input[data-id="${pid}"]`).value=q[pid]||''; render(); }
+  });
+  ['tabela','ult3','escadas','rpsusp'].forEach(i=>$(i).addEventListener('input',render));
+  sc.addEventListener('change',carregaCliente);
+  $('mesRef').addEventListener('change',renderReal);
+  $('abaReal').addEventListener('click',()=>aba('real'));
+  $('abaSim').addEventListener('click',()=>aba('sim'));
+  $('usarBase').addEventListener('click',usarBase);
+  $('zerar').addEventListener('click',()=>{P.forEach(p=>q[p.id]=0);base=null;preencheInputs();render();});
+  // regua (segmentos de largura igual por faixa)
+  let seg='', esc='';
+  const W=100/6;
+  seg+=`<div class="seg" style="left:0;width:${W}%;background:var(--bg)"></div>`;
+  FAIXAS.forEach((f,i)=>{seg+=`<div class="seg" style="left:${W*(i+1)}%;width:${W}%;background:${CORES[i]}"></div>`;
+    esc+=`<span style="left:${W*(i+1)}%">${num(f.min/1000)} mil</span>`;});
+  $('trilho').innerHTML=seg+'<div class="marcador" id="marc"></div>';
+  $('escala').innerHTML=esc;
+  // meses
+  $('meses').innerHTML=['Setembro','Outubro','Novembro','Dezembro'].map((m,i)=>`<div class="mes" id="m${i}"><h3>${m}</h3>
+    <div class="linha"><span>Volume vs. pedido</span><span><input type="number" min="0" step="5" value="100" data-m="${i}" aria-label="Volume de ${m} em %">%</span></div>
+    <div class="linha"><span>Caixas unitárias</span><b class="mc"></b></div>
+    <div class="linha"><span>Faixa do mês</span><span class="mf"></span></div>
+    <div class="linha"><span>Receita líquida</span><span class="mr"></span></div></div>`).join('');
+  $('meses').addEventListener('input',render);
+}
+function preencheInputs(){document.querySelectorAll('#tab input[data-id]').forEach(i=>{i.value=q[i.dataset.id]||''});
+  document.querySelectorAll('#tab input[data-pal]').forEach(i=>{const p=P.find(x=>x.id===i.dataset.pal); i.value=q[p.id]?+(q[p.id]/p.pal).toFixed(1):''});}
+let base=null, realAtual=null, LAST=null;
+function aba(v){ $('vReal').hidden=v!=='real'; $('vSim').hidden=v!=='sim';
+  $('abaReal').setAttribute('aria-selected',v==='real'); $('abaSim').setAttribute('aria-selected',v==='sim'); }
+function achaCli(id){return D.redes.find(r=>r.id===id)||D.clientes.find(x=>x.id===id);}
+function carregaCliente(){
+  const v=$('cliente').value;
+  if(v===''||v==='ex'){ $('campoMes').hidden=true; $('abaReal').disabled=true; realAtual=null;
+    if(v==='ex'){P.forEach(p=>q[p.id]=EXEMPLO[p.id]||0); base=null; preencheInputs(); render();}
+    aba('sim'); return; }
+  const c=achaCli(v); const ms=Object.keys(c.meses).sort().reverse();
+  $('mesRef').innerHTML=ms.map(m=>`<option value="${m}">${MES[+m.slice(4)]}/${m.slice(0,4)}${(D.parcial||{})[m]?' ('+D.parcial[m]+')':''}</option>`).join('');
+  $('campoMes').hidden=false; $('abaReal').disabled=false; renderReal(); aba('real');
+}
+const MES=['','jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+function renderReal(){
+  const c=achaCli($('cliente').value), mk=$('mesRef').value, m=c.meses[mk];
+  $('realLojas').hidden=!c.rede;
+  if(c.rede) $('realLojas').textContent=`Soma de ${m.lojas.length} de ${c.npv} PVs com compra no mês: ${m.lojas.join(', ')}.`+(m.lojas.length<c.npv?` Sem compra no mês: ${c.pvs.filter(p=>!m.lojas.includes(p)).join(', ')}.`:'');
+  const rlg={cc2l:0,cc600lata:0,demais:0}; let fat=0,rl=0,cxu=0,cxf=0,h='',fam='';
+  P.forEach(p=>{const r=m.real[p.id]; if(!r||!r[0])return;
+    if(p.fam!==fam){fam=p.fam;h+=`<tr class="fam"><td colspan="7">${fam}</td></tr>`;}
+    const u=r[0]*p.cxu; fat+=r[1]; rl+=r[2]; cxu+=u; cxf+=r[0]; rlg[p.grp]+=r[2];
+    h+=`<tr><td>${p.nome}</td><td>${num(r[0])}</td><td>${num(r[1]/r[0],2)}</td><td>${brl(r[1])}</td><td>${brl(r[2])}</td><td>${num(u)}</td><td><span class="tag ${p.grp}">${GRP[p.grp]}</span></td></tr>`;});
+  h+=`<tr class="total"><td>Total na tabela Neutraliza</td><td>${num(cxf)}</td><td></td><td>${brl(fat)}</td><td>${brl(rl)}</td><td>${num(cxu)}</td><td></td></tr>`;
+  if(m.fora.cxf) h+=`<tr class="fam"><td colspan="7">Fora da tabela Neutraliza</td></tr><tr class="zero"><td>Cervejas e outros itens (não contam para faixa nem rebate)</td><td>${num(m.fora.cxf)}</td><td></td><td>${brl(m.fora.fat)}</td><td></td><td></td><td></td></tr>`;
+  $('tabReal').querySelector('tbody').innerHTML=h;
+  let fx=0; FAIXAS.forEach((f,i)=>{if(cxu>=f.min)fx=i+1;}); const reb=rebate(rlg,fx);
+  const mes=`${MES[+mk.slice(4)]}/${mk.slice(0,4)}${(D.parcial||{})[mk]?' ('+D.parcial[mk]+')':''}`;
+  $('realTit').textContent=`Compra realizada: ${c.nome}, ${mes}`;
+  $('realKpis').innerHTML=`<div><small>Faturado</small><b>${brl(fat)}</b></div><div><small>Receita líquida</small><b>${brl(rl)}</b></div>
+   <div><small>Caixas unitárias</small><b>${num(cxu)}</b></div><div><small>Faixa do Fideliza nesse volume</small><b>${fx?'Faixa '+fx:'abaixo da faixa 1'}</b></div>
+   <div><small>Rebate que esse mês geraria</small><b>${brl(reb)}</b></div>`;
+  realAtual={nome:c.nome,mes,cxu,fx,reb,fat,mix:Object.fromEntries(P.map(p=>[p.id,(m.real[p.id]||[0])[0]]))};
+}
+function usarBase(){ if(!realAtual)return; P.forEach(p=>q[p.id]=realAtual.mix[p.id]);
+  base={...realAtual}; $('pCliente').value=realAtual.nome; preencheInputs(); render(); aba('sim'); window.scrollTo(0,0); }
+function render(){
+  const tabId=$('tabela').value, ult3=Math.min(100,Math.max(0,+$('ult3').value||0))/100, esc=$('escadas').checked;
+  RP_SUSP=$('rpsusp').checked; $('avisoRp').hidden=!RP_SUSP;
+  const R=calc(q,tabId,ult3,esc);
+  P.forEach(p=>{const l=R.L[p.id], tr=$('r_'+p.id);
+    tr.classList.toggle('zero',!q[p.id]);
+    const pr=tr.querySelector('.preco'); pr.textContent=num(l.un,2); pr.classList.toggle('mudou',l.mudou);
+    pr.title=l.mudou?`N-17 Não Turbo: ${num(p.nt,2)}`:'';
+    tr.querySelector('.pcx').textContent=num(l.cx,2);
+    tr.querySelector('.fat').textContent=q[p.id]?brl(l.fat):'';
+    tr.querySelector('.cxu').textContent=q[p.id]?num(l.cxu):'';
+  });
+  $('tCxf').textContent=num(R.tot.cxf); $('tPal').textContent=num(P.reduce((s,p)=>s+q[p.id]/p.pal,0),1); $('tFat').textContent=brl(R.tot.fat); $('tCxu').textContent=num(R.tot.cxu);
+  // faixa
+  $('fxNome').textContent=R.fx?('Faixa '+R.fx):'Sem faixa';
+  $('fxCxu').textContent=num(R.tot.cxu)+' cx unitárias';
+  $('marc').style.left=posRegua(R.tot.cxu)+'%';
+  let falta='';
+  if(R.fx<5){const prox=FAIXAS[R.fx], need=prox.min-R.tot.cxu;
+    const s=R.tot.cxu? prox.min/R.tot.cxu:0; const rgs={cc2l:R.tot.rlg.cc2l*s,cc600lata:R.tot.rlg.cc600lata*s,demais:R.tot.rlg.demais*s};
+    falta=`Faltam <b>${num(need)} cx unitárias</b> para a faixa ${prox.n}: cerca de ${num(Math.ceil(need/2.1134))} cx de 2L ou ${num(Math.ceil(need/0.7397))} cx de lata.`+
+      (R.tot.cxu?` Com o mesmo mix, o rebate iria para ${brl(rebate(rgs,prox.n))} por mês.`:'');
+  } else falta='Faixa máxima atingida.';
+  $('falta').innerHTML=falta;
+  $('kReb').textContent=brl(R.reb); $('kRebPct').textContent=R.tot.fat?pct(R.reb/R.tot.fat):'—';
+  $('kFat').textContent=brl(R.tot.fat); $('kRl').textContent=brl(R.tot.rl);
+  const lc=R.L.cco2; $('kCc').textContent=brl2(lc.cx);
+  const rc=R.fx?FAIXAS[R.fx-1].r.cc2l:0; $('kCcLiq').textContent=brl2(lc.cx-lc.cx*P[0].rl*rc);
+  // checks
+  const v=R.v, c=[];
+  if(tabId==='auto') c.push(R.ok?['ok',`Tabela aplicada: <b>${R.t.nome}</b> (${R.t.reqTxt}).`]:['no',`Nenhuma tabela do 2L atingida: mínimo de 5.000 cx de Coca-Cola Original 2L (hoje ${num(v.cc)}). Preço N-17 mostrado só como referência.`]);
+  else c.push(R.ok?['ok',`${R.t.nome}: requisito atendido (${R.t.reqTxt}).`]:['no',`${R.t.nome} exige ${R.t.reqTxt}. Hoje: ${num(v.cc)} cx de Original 2L, ${num(v.rp2)} cx de RefPet 2L, ${num(v.rp1)} cx de RefPet 1L.`]);
+  if(RP_SUSP) c.push(['info',`RefPet suspensa: exigências de RefPet consideradas cumpridas (validação temporária). Pedido atual: ${num(v.rp2)} cx RefPet 2L, ${num(v.rp1)} cx RefPet 1L.`]);
+  if(R.t.n22) c.push(['info',`N-22: 16.000 cx a preço N-17 e ${num(Math.max(0,v.cc-16000))} cx a R$ ${num(R.t.p,2)}; caixa média de ${brl2(R.pc.media*6)}.`]);
+  c.push(v.turbo?['ok',`Turbo Lata ativo: ${num(v.lata)} cx de lata (mínimo 9.000).`]:['info',`Turbo Lata: ${num(v.lata)} de 9.000 cx de lata. Ao atingir, as latas ficam mais baratas (e o 2L Coca na N-17 cai para 9,28).`]);
+  if(esc&&v.lata>=35000){ const d=degrauLata(v,q), s=share355(q);
+    c.push(d?['ok',`Escada de lata: Coca-Cola lata a R$ ${num(d.p,2)} (${num(d.lata/1000)} mil cx, ${num(d.rp)} cx RefPet 2L${d.s355?`, 355ml PET ${pct(d.s355,0)} das cx unitárias`:''}). 355ml hoje: ${pct(s,1)}.`]
+      :['info',`Escada de lata não atingida: exige 16.000 cx de Original 2L, RefPet 2L (500 ou 750 cx) e 355ml PET em 1% ou 2% das caixas unitárias. Hoje: ${num(v.rp2)} cx RefPet 2L, 355ml em ${pct(s,1)}.`]); }
+  if(q.ccsa2) c.push(['info',`Coca-Cola Sem Açúcar 2L (${num(q.ccsa2)} cx) paga o preço da Original, mas não conta para o mínimo.`]);
+  if(ult3) c.push(['info',`${num(ult3*100)}% do 2L nos 3 últimos dias: + R$ 0,10 por unidade nessa parte.`]);
+  c.push(R.fx?['ok',`Fideliza Neutraliza 23 na faixa ${R.fx}: ${R.fx<=2?pct(FAIXAS[R.fx-1].r.cc2l,2)+' sobre toda a receita líquida':`${pct(FAIXAS[R.fx-1].r.cc2l,1)} Coca 2L, ${pct(FAIXAS[R.fx-1].r.cc600lata,1)} Coca 600ml e lata, ${pct(FAIXAS[R.fx-1].r.demais,1)} demais`}.`]:['no',`Fideliza: abaixo da faixa 1 (22.000 cx unitárias), sem rebate.`]);
+  $('checks').innerHTML=c.map(([k,t])=>`<li class="${k}">${t}</li>`).join('');
+  if(base){ const dR=R.reb-base.reb, dC=R.tot.cxu-base.cxu;
+    $('compara').hidden=false;
+    $('compara').innerHTML=`<span>Ponto de partida: compra realizada de <b>${base.nome}</b> em ${base.mes}: ${num(base.cxu)} cx unitárias, ${base.fx?'faixa '+base.fx:'sem faixa'}, rebate ${brl(base.reb)}.</span>
+      <span>Proposta: ${num(R.tot.cxu)} cx unitárias (<span class="${dC>=0?'up':'down'}">${dC>=0?'+':''}${num(dC)}</span>), rebate ${brl(R.reb)} (<span class="${dR>=0?'up':'down'}">${dR>=0?'+':''}${brl(dR)}</span>).</span>`;
+  } else $('compara').hidden=true;
+  // ciclo
+  const ms=[...document.querySelectorAll('#meses input')].map(i=>Math.max(0,+i.value||0)/100);
+  const RM=ms.map(m=>{const Q={};P.forEach(p=>Q[p.id]=q[p.id]*m);return calc(Q,tabId,ult3,esc);});
+  const pior=Math.min(...RM.map(r=>r.fx)); const varia=pior<Math.max(...RM.map(r=>r.fx));
+  RM.forEach((r,i)=>{const el=$('m'+i);
+    el.querySelector('.mc').textContent=num(r.tot.cxu);
+    el.querySelector('.mf').innerHTML=r.fx?`<span class="fx" style="background:${CORES[r.fx-1]}">${r.fx}</span>`:'<span style="color:var(--red);font-weight:700">abaixo da 1</span>';
+    el.querySelector('.mr').textContent=brl(r.tot.rl);
+    el.classList.toggle('pior',varia&&r.fx===pior);
+  });
+  const pago=RM.reduce((s,r)=>s+rebate(r.tot.rlg,pior),0);
+  LAST={R,RM,pior,pago,ms,tabId,ult3,esc}; statusPdf();
+  const proprio=RM.reduce((s,r)=>s+r.reb,0);
+  let h=`<span>Faixa paga no ciclo: <b>${pior?('Faixa '+pior):'nenhuma'}</b></span><span>Rebate do ciclo: <b>${brl(pago)}</b></span>`;
+  if(pior>0&&proprio-pago>1) h+=`<span>Deixa de receber pela regra da pior faixa: <b style="color:var(--red)">${brl(proprio-pago)}</b></span>`;
+  $('cicloRes').innerHTML=h+(pior===0&&R.tot.cxu>0?`<div class="alerta">Um mês abaixo de 22.000 cx unitárias zera o rebate do ciclo e o cliente sai da tabela até janeiro.</div>`:'');
+}
+function statusPdf(){
+  if(!LAST) return; const {R,RM,pior}=LAST, b=$('gerarPdf'), s=$('statusPdf'); let msg='';
+  if(!R.tot.cxf) msg='Monte o pedido da proposta para liberar o PDF.';
+  else if(!R.ok) msg='Ajuste antes de gerar: a proposta não atende a tabela do Coca-Cola 2L selecionada.';
+  else if(!R.fx) msg='Ajuste antes de gerar: o pedido não chega à faixa 1 (22.000 cx unitárias).';
+  else if(!pior) msg='Ajuste antes de gerar: algum mês do ciclo fica abaixo da faixa 1 e zera o rebate.';
+  b.disabled=!!msg; s.className='statusPdf '+(msg?'no':'ok');
+  s.textContent=msg||`Proposta pronta para gerar: ${R.t.nome}, faixa ${pior} no ciclo, rebate estimado de ${brl(LAST.pago)}.`;
+}
+function esc(s){return String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function gerarPdf(){
+  const {R,RM,pior,pago,ms,ult3}=LAST; const hoje=new Date();
+  const dt=hoje.toLocaleDateString('pt-BR'); const cli=$('pCliente').value.trim()||'Cliente';
+  const val=$('pValid').value?new Date($('pValid').value+'T12:00').toLocaleDateString('pt-BR'):'';
+  let itens='', fam='';
+  P.forEach(p=>{ if(!q[p.id])return; const l=R.L[p.id];
+    itens+=`<tr><td>${p.nome}</td><td>${num(q[p.id])}</td><td>${num(q[p.id]/p.pal,1)}</td><td>${num(l.un,2)}</td><td>${num(l.cx,2)}</td><td>${brl2(l.fat)}</td><td>${num(l.cxu)}</td></tr>`;});
+  const pal=P.reduce((s,p)=>s+q[p.id]/p.pal,0);
+  itens+=`<tr class="tt"><td>Total do mês</td><td>${num(R.tot.cxf)}</td><td>${num(pal,1)}</td><td></td><td></td><td>${brl2(R.tot.fat)}</td><td>${num(R.tot.cxu)}</td></tr>`;
+  const fr=FAIXAS.map((f,i)=>`<tr class="${i+1===pior?'hl':''}"><td>Faixa ${f.n}</td><td>${num(f.min)}</td><td>${i<2?pct(f.r.cc2l,2)+' sobre toda a receita líquida':`${pct(f.r.cc2l,1)} Coca-Cola 2L · ${pct(f.r.cc600lata,1)} 600ml e lata · ${pct(f.r.demais,1)} demais`}</td></tr>`).join('');
+  const nomesM=['Setembro','Outubro','Novembro','Dezembro'];
+  const mesesT=RM.map((r,i)=>`<tr><td>${nomesM[i]}/2026</td><td>${num(ms[i]*100)}%</td><td>${num(r.tot.cxu)}</td><td>${r.fx?'Faixa '+r.fx:'abaixo da 1'}</td><td>${brl(rebate(r.tot.rlg,pior))}</td></tr>`).join('')+
+    `<tr class="tt"><td>Ciclo (paga pela faixa ${pior})</td><td></td><td>${num(RM.reduce((s,r)=>s+r.tot.cxu,0))}</td><td></td><td>${brl(pago)}</td></tr>`;
+  const cond=[`Tabela do Coca-Cola 2L: <b>${R.t.nome}</b> (${R.t.reqTxt}).`,
+    `Demais produtos pela tabela N-17${R.v.turbo?' Turbo Lata':''}.`,'Frete FOB e pagamento à vista.',
+    ult3?`${num(ult3*100)}% do 2L previsto para retirada nos 3 últimos dias do mês, com acréscimo de R$ 0,10 por unidade.`:'',
+    'Apuração mensal pelo volume digitado e retirado até o último dia do mês.',
+    'Rebate pago ao fim do ciclo setembro a dezembro/2026, pela menor faixa atingida entre os quatro meses. Um mês abaixo da faixa 1 cancela o rebate do ciclo e retira o cliente da tabela até o próximo ciclo.',
+    'Rebate calculado sobre a receita líquida; os valores desta proposta são estimativas e o valor final é apurado no fechamento do ciclo.'].filter(Boolean);
+  $('doc').innerHTML=`<div class="d-top"><h1>Proposta comercial · Fideliza Neutraliza N23</h1><div class="d-emp">Refrescos Bandeirantes<br>Emitida em ${dt}</div></div>
+   <div class="d-id"><div><small>Cliente</small><b>${esc(cli)}</b></div><div><small>CNPJ / código</small><b>${esc($('pCod').value)||'—'}</b></div><div><small>Ciclo</small><b>Setembro a dezembro/2026</b></div>
+   <div><small>Responsável Bandeirantes</small><b>${esc($('pResp').value)||'—'}</b></div><div><small>Validade da proposta</small><b>${val||'—'}</b></div><div><small>Tabela de preços</small><b>TTV agosto/2026</b></div></div>
+   <div class="d-res blk"><div><small>Volume mensal</small><b>${num(R.tot.cxf)} cx físicas</b></div><div><small>Caixas unitárias no mês</small><b>${num(R.tot.cxu)}</b></div>
+   <div><small>Faixa Fideliza no ciclo</small><b>Faixa ${pior}</b></div><div class="d-dest"><small>Rebate estimado do ciclo</small><b>${brl(pago)}</b></div></div>
+   <h2>Pedido mensal</h2><table><thead><tr><th>Produto</th><th>Caixas</th><th>Pallets</th><th>Preço unidade</th><th>Preço caixa</th><th>Valor</th><th>Caixas unitárias</th></tr></thead><tbody>${itens}</tbody></table>
+   <div class="blk"><h2>Rebate Fideliza Neutraliza 23</h2><table><thead><tr><th>Faixa</th><th>Mínimo cx unitárias/mês</th><th>Retorno sobre a receita líquida</th></tr></thead><tbody>${fr}</tbody></table></div>
+   <div class="blk"><h2>Plano do ciclo</h2><table><thead><tr><th>Mês</th><th>Volume vs. pedido</th><th>Caixas unitárias</th><th>Faixa do mês</th><th>Rebate estimado</th></tr></thead><tbody>${mesesT}</tbody></table></div>
+   <div class="blk"><h2>Condições</h2><ul>${cond.map(c=>`<li>${c}</li>`).join('')}</ul>
+   ${RP_SUSP?'<div class="d-aviso">Validação temporária: por falta de produto, a exigência de RefPet está suspensa neste período e considerada cumprida. Quando o abastecimento for normalizado, a exigência volta a valer.</div>':''}
+   ${$('pObs').value.trim()?`<h2>Observações</h2><p style="margin:2px 0;white-space:pre-wrap">${esc($('pObs').value)}</p>`:''}</div>
+   <div class="d-ass blk"><div>${esc(cli)}</div><div>Refrescos Bandeirantes${$('pResp').value?' · '+esc($('pResp').value):''}</div></div>
+   <div class="d-rod">Preços, faixas e percentuais conforme regras vigentes do programa Neutraliza definidas pela Presidência. Proposta sujeita à aprovação comercial.</div>`;
+  const d=$('doc'); d.style.zoom=1; d.style.cssText+=';display:block;position:absolute;left:-10000px;top:0';
+  const alturaPagina=248/25.4*96; // área segura: cabe em A4 e em Carta/Letter (a menor), já descontadas as margens
+  d.style.width='184mm'; let z=1;
+  for(let i=0;i<4;i++){ const h=d.scrollHeight*z; if(h<=alturaPagina) break; z=z*alturaPagina/h*0.985; d.style.width=(184/z)+'mm'; }
+  d.style.position=''; d.style.left=''; d.style.top=''; d.style.display='';
+  d.style.zoom=z.toFixed(3);
+  const t0=document.title; document.title=`Proposta Neutraliza N23 - ${cli} - ${dt.replace(/\//g,'-')}`;
+  window.print(); setTimeout(()=>document.title=t0,1500);
+}
+montaControles(); $('abaReal').disabled=true;
+$('gerarPdf').addEventListener('click',gerarPdf);
+(()=>{const d=new Date();d.setDate(d.getDate()+15);$('pValid').value=d.toISOString().slice(0,10);})(); preencheInputs(); render();
+</script>
+</body>
+</html>
